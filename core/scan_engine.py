@@ -170,6 +170,12 @@ class ScanEngine:
                     return NetworkScanner(progress).scan()
                 tasks.append(ScannerTask("Network Scanner", net_scan))
 
+        if scan_type in ("full", "macro"):
+            def macro_scan():
+                from core.mouse_macro_scanner import MouseMacroScanner
+                return MouseMacroScanner(progress).scan()
+            tasks.append(ScannerTask("Mouse Macro Scanner", macro_scan, timeout=20))
+
         if scan_type in ("full", "kernel"):
             if self.settings.kernel_check_enabled or scan_type == "kernel":
                 def kernel_scan():
