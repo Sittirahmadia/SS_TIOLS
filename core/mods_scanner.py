@@ -284,6 +284,50 @@ class BytecodeAnalyzer:
                 })
                 break
 
+        # Check for dynamic class loading
+        classloader_indicators = [
+            "java/lang/ClassLoader", "defineClass", "URLClassLoader",
+            "java/net/URLClassLoader",
+        ]
+        cl_count = sum(1 for s in strings for ci in classloader_indicators if ci in s)
+        if cl_count >= 2:
+            findings.append({
+                "type": "dynamic_classloading",
+                "description": f"Dynamic class loading detected ({cl_count} indicators) - potential hidden code",
+                "severity": 80,
+                "evidence": f"{cl_count} classloader-related references",
+            })
+
+        # Check for encryption usage (hiding cheat config/strings)
+        crypto_indicators = [
+            "javax/crypto/Cipher", "AES", "DES", "Blowfish",
+            "SecretKeySpec", "javax/crypto", "PKCS5Padding",
+        ]
+        crypto_count = sum(1 for s in strings for ci in crypto_indicators if ci in s)
+        if crypto_count >= 2:
+            findings.append({
+                "type": "encryption_usage",
+                "description": f"Encryption API usage detected ({crypto_count} indicators) - potential hidden data",
+                "severity": 65,
+                "evidence": f"{crypto_count} crypto-related references",
+            })
+
+        # Check for Mixin injection annotations (cheat injection framework)
+        mixin_dangerous = [
+            "org/spongepowered/asm/mixin/Overwrite",
+            "org/spongepowered/asm/mixin/injection/Redirect",
+        ]
+        for s in strings:
+            for md in mixin_dangerous:
+                if md in s:
+                    sev = 75 if "Overwrite" in md else 60
+                    findings.append({
+                        "type": "mixin_dangerous",
+                        "description": f"Dangerous Mixin annotation: {md.split('/')[-1]} - replaces vanilla method",
+                        "severity": sev,
+                        "evidence": s[:200],
+                    })
+
         return findings
 
     @staticmethod
@@ -431,15 +475,9 @@ class ModsScanner:
         file_size = os.path.getsize(mod_path)
         md5 = file_hash_md5(mod_path) or ""
 
-        # Check whitelist
+        # Check whitelist — still scan bytecode to catch ghost clients disguised as legit mods
         mod_name = os.path.splitext(filename)[0]
-        if self.db.is_mod_whitelisted(mod_name):
-            return ModScanResult(
-                filepath=mod_path, filename=filename,
-                file_size=file_size, md5=md5,
-                status="CLEAN", is_whitelisted=True,
-                scan_time=time.time() - start_time,
-            )
+        is_whitelisted = self.db.is_mod_whitelisted(mod_name)
 
         # Check cache (skip for deep scan)
         if not deep_scan:
@@ -466,6 +504,31 @@ class ModsScanner:
 
                 # Scan .class files (bytecode analysis)
                 class_files = [e for e in entries if e.endswith('.class')]
+
+                # JAR-level obfuscation check: single/double-letter class names
+                root_classes = [e for e in class_files if '/' not in e]
+                short_root = [e for e in root_classes if len(e.replace('.class', '')) <= 2]
+                if len(short_root) >= 3:
+                    result.add_finding("JAR", "jar_obfuscation",
+                        f"JAR contains {len(short_root)} obfuscated root classes ({', '.join(short_root[:5])})",
+                        70, evidence=f"Short-named classes: {short_root[:10]}")
+                elif len(short_root) >= 1 and len(root_classes) > 0:
+                    ratio = len(short_root) / max(len(root_classes), 1)
+                    if ratio > 0.5:
+                        result.add_finding("JAR", "jar_obfuscation",
+                            f"High ratio of obfuscated root classes: {len(short_root)}/{len(root_classes)}",
+                            55, evidence=f"Short: {short_root[:10]}")
+
+                # Also check for obfuscated package paths (e.g., a/b.class, a/c.class)
+                short_pkg_classes = []
+                for cf in class_files:
+                    parts = cf.replace('.class', '').split('/')
+                    if all(len(p) <= 2 and p.isalpha() for p in parts) and len(parts) >= 2:
+                        short_pkg_classes.append(cf)
+                if len(short_pkg_classes) >= 2:
+                    result.add_finding("JAR", "jar_obfuscation",
+                        f"Obfuscated package structure: {len(short_pkg_classes)} classes with single-letter paths",
+                        65, evidence=f"Obfuscated: {short_pkg_classes[:8]}")
                 result.class_count = len(class_files)
 
                 for class_file in class_files:
@@ -522,6 +585,12 @@ class ModsScanner:
             logger.debug(f"Error scanning JAR {filename}: {e}")
 
         result.scan_time = time.time() - start_time
+        result.is_whitelisted = is_whitelisted
+
+        # If whitelisted AND clean, mark as whitelisted clean
+        if is_whitelisted and result.severity < 60:
+            result.status = "CLEAN"
+            result.is_whitelisted = True
 
         # Cache result
         if result.status != "ERROR":
