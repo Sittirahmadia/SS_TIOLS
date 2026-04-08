@@ -41,28 +41,24 @@ from core.utils import (
     severity_label, format_duration, format_size, get_file_timestamp
 )
 from core.database import CheatDatabase
-from core.keyword_detector import KeywordDetector
-from core.minecraft_scanner import MinecraftScanner
-from core.mods_scanner import ModsScanner, ModScanResult
-from core.kernel_check import KernelCheck
-from core.process_scanner import ProcessScanner
-from core.string_deleted_scanner import StringDeletedScanner
-from core.browser_scanner import BrowserScanner
-from core.deleted_file_detector import DeletedFileDetector
-from core.memory_scanner import MemoryScanner
-from core.network_scanner import NetworkScanner
+from core.mods_scanner import ModScanResult
+from core.scan_engine import ScanEngine
 from core.evidence_collector import EvidenceCollector, ReportGenerator
 
 
 # ─── Worker Thread ────────────────────────────────────────────────────
 class ScanWorker(QThread):
-    """Background worker for running scans."""
-    progress_update = pyqtSignal(str, int, int)  # module, current, total
+    """
+    Background worker that uses ScanEngine for parallel, timeout-protected scanning.
+    All scanners run concurrently — no sequential blocking.
+    """
+    progress_update = pyqtSignal(int, int, int, str)  # completed, total, pct, eta
     result_found = pyqtSignal(dict)
-    scan_finished = pyqtSignal(list, float)  # results, duration
-    mod_result = pyqtSignal(object)  # ModScanResult
+    scan_finished = pyqtSignal(list, list, float)  # results, mod_results, duration
+    mod_result = pyqtSignal(object)
     status_update = pyqtSignal(str)
     error_occurred = pyqtSignal(str)
+    scanner_done = pyqtSignal(str, int, str)  # scanner_name, finding_count, duration_str
 
     def __init__(self, scan_type: str = "full", settings: AppSettings = None,
                  mod_dir: str = "", deep_scan: bool = False):
@@ -71,107 +67,38 @@ class ScanWorker(QThread):
         self.settings = settings or AppSettings.load()
         self.mod_dir = mod_dir
         self.deep_scan = deep_scan
-        self._running = True
+        self.engine: Optional[ScanEngine] = None
 
     def stop(self):
-        self._running = False
+        if self.engine:
+            self.engine.stop()
 
     def run(self):
-        start_time = time.time()
-        all_results = []
         try:
-            progress = ScanProgress()
-            progress.add_callback(lambda p: self.progress_update.emit(
-                p.current_module, p.completed, p.total
-            ))
+            self.engine = ScanEngine(self.settings)
 
-            scanners = self._get_scanners(progress)
+            # Wire up callbacks (thread-safe via signals)
+            self.engine.on_scanner_start = lambda name: self.status_update.emit(f"⚡ {name}...")
+            self.engine.on_scanner_done = lambda name, results, dur: self.scanner_done.emit(
+                name, len(results), format_duration(dur)
+            )
+            self.engine.on_scanner_error = lambda name, err: self.error_occurred.emit(f"{name}: {err}")
+            self.engine.on_result = lambda r: self.result_found.emit(r.to_dict())
+            self.engine.on_mod_result = lambda mr: self.mod_result.emit(mr)
+            self.engine.on_progress = lambda c, t, p, eta: self.progress_update.emit(c, t, p, eta)
 
-            for name, scanner_func in scanners:
-                if not self._running:
-                    break
-                self.status_update.emit(f"Running {name}...")
-                try:
-                    results = scanner_func()
-                    all_results.extend(results)
-                    for r in results:
-                        self.result_found.emit(r.to_dict())
-                except Exception as e:
-                    logger.error(f"{name} error: {e}")
-                    self.error_occurred.emit(f"{name}: {str(e)}")
+            all_results, mod_results, duration = self.engine.run_scan(
+                scan_type=self.scan_type,
+                mod_dir=self.mod_dir,
+                deep_scan=self.deep_scan,
+            )
+
+            self.scan_finished.emit(all_results, mod_results, duration)
 
         except Exception as e:
+            logger.error(f"ScanWorker fatal: {e}")
             self.error_occurred.emit(str(e))
-
-        duration = time.time() - start_time
-        self.scan_finished.emit(all_results, duration)
-
-    def _get_scanners(self, progress):
-        """Get list of scanners based on scan type."""
-        scanners = []
-
-        if self.scan_type == "full":
-            scanners = [
-                ("Minecraft Scanner", lambda: MinecraftScanner(progress).scan_all()),
-                ("Process Scanner", lambda: ProcessScanner(progress).scan()),
-                ("Browser Scanner", lambda: BrowserScanner(progress).scan()),
-                ("Deleted String Scanner", lambda: StringDeletedScanner(progress).scan()),
-                ("Deleted File Detector", lambda: DeletedFileDetector(progress).scan()),
-                ("Memory Scanner", lambda: MemoryScanner(progress).scan()),
-                ("Network Scanner", lambda: NetworkScanner(progress).scan()),
-            ]
-            if self.settings.kernel_check_enabled:
-                scanners.append(("Kernel Check", lambda: KernelCheck(progress).scan()))
-
-        elif self.scan_type == "mods":
-            def mods_scan():
-                scanner = ModsScanner(progress, self.settings)
-                if self.mod_dir:
-                    results = scanner.scan_directory(self.mod_dir)
-                else:
-                    mod_files = scanner.find_all_mods()
-                    results = scanner.scan_mods(mod_files, self.deep_scan)
-                # Emit individual mod results
-                scan_results = []
-                for mr in results:
-                    self.mod_result.emit(mr)
-                    if mr.status != "CLEAN":
-                        scan_results.append(ScanResult(
-                            scanner="ModsScanner",
-                            category="mod_" + mr.status.lower(),
-                            name=mr.filename,
-                            description=f"{mr.status}: {mr.filename} (severity: {mr.severity})",
-                            severity=mr.severity,
-                            filepath=mr.filepath,
-                        ))
-                return scan_results
-            scanners = [("Mods Scanner", mods_scan)]
-
-        elif self.scan_type == "kernel":
-            scanners = [("Kernel Check", lambda: KernelCheck(progress).scan())]
-
-        elif self.scan_type == "minecraft":
-            scanners = [("Minecraft Scanner", lambda: MinecraftScanner(progress).scan_all())]
-
-        elif self.scan_type == "process":
-            scanners = [("Process Scanner", lambda: ProcessScanner(progress).scan())]
-
-        elif self.scan_type == "browser":
-            scanners = [("Browser Scanner", lambda: BrowserScanner(progress).scan())]
-
-        elif self.scan_type == "deleted":
-            scanners = [
-                ("Deleted String Scanner", lambda: StringDeletedScanner(progress).scan()),
-                ("Deleted File Detector", lambda: DeletedFileDetector(progress).scan()),
-            ]
-
-        elif self.scan_type == "memory":
-            scanners = [("Memory Scanner", lambda: MemoryScanner(progress).scan())]
-
-        elif self.scan_type == "network":
-            scanners = [("Network Scanner", lambda: NetworkScanner(progress).scan())]
-
-        return scanners
+            self.scan_finished.emit([], [], 0.0)
 
 
 # ─── Stat Card Widget ─────────────────────────────────────────────────
@@ -961,6 +888,7 @@ class MainWindow(QMainWindow):
         self.worker.mod_result.connect(self._on_mod_result)
         self.worker.status_update.connect(self._on_status)
         self.worker.error_occurred.connect(self._on_error)
+        self.worker.scanner_done.connect(self._on_scanner_done)
         self.worker.start()
 
         self.full_scan_btn.setEnabled(False)
@@ -979,14 +907,17 @@ class MainWindow(QMainWindow):
             self.worker.stop()
             self.status_label.setText("Scan stopped by user")
 
-    def _on_progress(self, module: str, current: int, total: int):
+    def _on_progress(self, completed: int, total: int, pct: int, eta: str):
         if total > 0:
-            pct = int((current / total) * 100)
             self.progress_bar.setValue(pct)
-            self.progress_bar.setFormat(f"{module}: {current}/{total} ({pct}%)")
+            self.progress_bar.setFormat(f"Scanners: {completed}/{total} ({pct}%) — ETA: {eta}")
             if hasattr(self, 'mods_progress'):
                 self.mods_progress.setValue(pct)
-                self.mods_progress.setFormat(f"{current}/{total}")
+                self.mods_progress.setFormat(f"{completed}/{total}")
+            self.progress_label.setText(f"{completed}/{total} scanners complete — ETA: {eta}")
+
+    def _on_scanner_done(self, name: str, count: int, duration_str: str):
+        self.status_label.setText(f"✓ {name}: {count} findings in {duration_str}")
 
     def _on_result(self, result_dict: dict):
         self.scan_results.append(
@@ -1003,11 +934,17 @@ class MainWindow(QMainWindow):
         self.mod_results.append(mod_result)
         self._add_mod_row(mod_result)
 
-    def _on_scan_finished(self, results, duration):
+    def _on_scan_finished(self, results, mod_results, duration):
         self.full_scan_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
         self.progress_bar.setValue(100)
         self.progress_bar.setFormat("Complete!")
+
+        # Merge mod_results from engine
+        if mod_results:
+            for mr in mod_results:
+                if mr not in self.mod_results:
+                    self.mod_results.append(mr)
 
         self.status_label.setText(
             self.i18n.t("msg_scan_complete", time=format_duration(duration))
@@ -1197,6 +1134,7 @@ class MainWindow(QMainWindow):
             self, "Select Mods Directory"
         )
         if directory:
+            self.scan_start_time = time.time()
             self.worker = ScanWorker(
                 scan_type="mods",
                 settings=self.settings,
@@ -1208,7 +1146,11 @@ class MainWindow(QMainWindow):
             self.worker.scan_finished.connect(self._on_scan_finished)
             self.worker.mod_result.connect(self._on_mod_result)
             self.worker.status_update.connect(self._on_status)
+            self.worker.error_occurred.connect(self._on_error)
+            self.worker.scanner_done.connect(self._on_scanner_done)
             self.worker.start()
+            self.full_scan_btn.setEnabled(False)
+            self.stop_btn.setEnabled(True)
 
     def _generate_report(self):
         if not self.scan_results:

@@ -1,0 +1,25 @@
+2026-04-08 18:35:13,488 [INFO] SS-Tools: Database loaded: v3.0.0 (350 entries)
+2026-04-08 18:35:13,489 [INFO] SS-Tools: Starting full scan with 9 scanners in parallel
+2026-04-08 18:35:13,509 [INFO] SS-Tools: KeywordDetector: compiled 44 regex patterns
+2026-04-08 18:35:13,510 [INFO] SS-Tools: KeywordDetector: compiled 44 regex patterns
+2026-04-08 18:35:13,512 [INFO] SS-Tools: KeywordDetector: compiled 44 regex patterns
+2026-04-08 18:35:13,512 [INFO] SS-Tools:   Browser Scanner: 0 findings in 21ms
+2026-04-08 18:35:13,515 [INFO] SS-Tools: No Minecraft installations found
+2026-04-08 18:35:13,516 [INFO] SS-Tools:   Minecraft Scanner: 0 findings in 27ms
+2026-04-08 18:35:13,517 [INFO] SS-Tools:   Deleted File Detector: 0 findings in 23ms
+2026-04-08 18:35:13,519 [INFO] SS-Tools: KeywordDetector: compiled 44 regex patterns
+2026-04-08 18:35:13,523 [INFO] SS-Tools:   Deleted String Scanner: 0 findings in 32ms
+2026-04-08 18:35:13,529 [WARNING] SS-Tools: Kernel Check requires Windows + pywin32
+2026-04-08 18:35:13,531 [INFO] SS-Tools:   Kernel Check: 1 findings in 33ms
+2026-04-08 18:35:13,541 [INFO] SS-Tools: KeywordDetector: compiled 44 regex patterns
+2026-04-08 18:35:13,542 [INFO] SS-Tools: KeywordDetector: compiled 44 regex patterns
+2026-04-08 18:35:13,542 [INFO] SS-Tools: KeywordDetector: compiled 44 regex patterns
+2026-04-08 18:35:13,547 [INFO] SS-Tools: KeywordDetector: compiled 44 regex patterns
+2026-04-08 18:35:13,549 [INFO] SS-Tools: KeywordDetector: compiled 44 regex patterns
+2026-04-08 18:35:13,552 [INFO] SS-Tools: Found 0 mod JAR files
+2026-04-08 18:35:13,553 [INFO] SS-Tools:   Mods Scanner: 0 findings in 41ms
+2026-04-08 18:35:13,555 [INFO] SS-Tools:   Process Scanner: 0 findings in 65ms
+2026-04-08 18:35:13,556 [INFO] SS-Tools:   Memory Scanner: 0 findings in 61ms
+2026-04-08 18:35:13,575 [INFO] SS-Tools:   Network Scanner: 0 findings in 79ms
+2026-04-08 18:35:13,576 [INFO] SS-Tools: Scan complete: 1 findings in 87ms
+2026-04-08 18:35:13,577 [INFO] SS-Tools: Report generated: /workspace/SS_TOOLS/Reports/SS_Report_TestPlayer_20260408_183513.html

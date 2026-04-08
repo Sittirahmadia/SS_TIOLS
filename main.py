@@ -25,109 +25,62 @@ def run_gui():
 
 
 def run_cli(args):
-    """Run CLI-mode scan (headless)."""
+    """Run CLI-mode scan (headless) using parallel ScanEngine."""
     from core.config import AppSettings
-    from core.utils import ScanResult, ScanProgress, format_duration, severity_label, logger
+    from core.utils import format_duration, severity_label, logger
     from core.database import CheatDatabase
-    from core.minecraft_scanner import MinecraftScanner
-    from core.mods_scanner import ModsScanner
-    from core.kernel_check import KernelCheck
-    from core.process_scanner import ProcessScanner
-    from core.string_deleted_scanner import StringDeletedScanner
-    from core.browser_scanner import BrowserScanner
-    from core.deleted_file_detector import DeletedFileDetector
-    from core.memory_scanner import MemoryScanner
-    from core.network_scanner import NetworkScanner
-    from core.evidence_collector import EvidenceCollector, ReportGenerator
+    from core.scan_engine import ScanEngine
+    from core.evidence_collector import ReportGenerator
 
     settings = AppSettings.load()
+    if args.deep:
+        settings.deep_scan_mode = True
     db = CheatDatabase()
-    progress = ScanProgress()
-    all_results = []
 
     print("=" * 60)
-    print("  SS-Tools Ultimate v3.0 - CLI Mode")
+    print("  SS-Tools Ultimate v3.0 - CLI Mode (Parallel Engine)")
     print(f"  Database: v{db.version}")
     print("=" * 60)
 
-    start_time = time.time()
+    scan_types = [s.strip() for s in (args.scan or "full").split(",")]
 
-    scan_types = args.scan.split(",") if args.scan else ["full"]
+    all_results = []
+    all_mod_results = []
+    total_duration = 0.0
 
     for scan_type in scan_types:
-        scan_type = scan_type.strip()
-        print(f"\n[*] Running {scan_type} scanner...")
+        print(f"\n[*] Running {scan_type} scan (all scanners in parallel)...")
 
-        try:
-            if scan_type in ("full", "minecraft"):
-                results = MinecraftScanner(progress).scan_all()
-                all_results.extend(results)
-                print(f"    Minecraft Scanner: {len(results)} findings")
+        engine = ScanEngine(settings)
 
-            if scan_type in ("full", "mods"):
-                scanner = ModsScanner(progress, settings)
-                mod_files = scanner.find_all_mods()
-                print(f"    Found {len(mod_files)} mod files")
-                mod_results = scanner.scan_mods(mod_files, args.deep)
-                for mr in mod_results:
-                    if mr.status != "CLEAN":
-                        all_results.append(ScanResult(
-                            scanner="ModsScanner",
-                            category=f"mod_{mr.status.lower()}",
-                            name=mr.filename,
-                            description=f"{mr.status}: {mr.filename}",
-                            severity=mr.severity,
-                            filepath=mr.filepath,
-                        ))
-                cheats = [m for m in mod_results if m.status == "CHEAT_DETECTED"]
-                suspicious = [m for m in mod_results if m.status == "SUSPICIOUS"]
-                print(f"    Mods Scanner: {len(cheats)} cheats, {len(suspicious)} suspicious")
+        # Live progress callback
+        engine.on_scanner_start = lambda name: print(f"  ⚡ Starting {name}...")
+        engine.on_scanner_done = lambda name, results, dur: print(
+            f"  ✓ {name}: {len(results)} findings in {format_duration(dur)}"
+        )
+        engine.on_scanner_error = lambda name, err: print(f"  ✗ {name}: ERROR — {err}")
 
-            if scan_type in ("full", "kernel"):
-                results = KernelCheck(progress).scan()
-                all_results.extend(results)
-                print(f"    Kernel Check: {len(results)} findings")
+        results, mod_results, duration = engine.run_scan(
+            scan_type=scan_type,
+            deep_scan=args.deep,
+        )
+        all_results.extend(results)
+        all_mod_results.extend(mod_results)
+        total_duration += duration
 
-            if scan_type in ("full", "process"):
-                results = ProcessScanner(progress).scan()
-                all_results.extend(results)
-                print(f"    Process Scanner: {len(results)} findings")
+        # Print summary for this scan type
+        summary = engine.get_summary()
+        print(f"\n  Scanners: {summary['scanners_completed']}/{summary['scanners_total']} "
+              f"(failed: {summary['scanners_failed']})")
 
-            if scan_type in ("full", "browser"):
-                results = BrowserScanner(progress).scan()
-                all_results.extend(results)
-                print(f"    Browser Scanner: {len(results)} findings")
-
-            if scan_type in ("full", "deleted"):
-                results = StringDeletedScanner(progress).scan()
-                all_results.extend(results)
-                results2 = DeletedFileDetector(progress).scan()
-                all_results.extend(results2)
-                print(f"    Deleted Scanner: {len(results) + len(results2)} findings")
-
-            if scan_type in ("full", "memory"):
-                results = MemoryScanner(progress).scan()
-                all_results.extend(results)
-                print(f"    Memory Scanner: {len(results)} findings")
-
-            if scan_type in ("full", "network"):
-                results = NetworkScanner(progress).scan()
-                all_results.extend(results)
-                print(f"    Network Scanner: {len(results)} findings")
-
-        except Exception as e:
-            print(f"    Error in {scan_type}: {e}")
-
-    duration = time.time() - start_time
-
-    # Summary
+    # Final summary
     critical = [r for r in all_results if r.severity >= 90]
     high = [r for r in all_results if 70 <= r.severity < 90]
     medium = [r for r in all_results if 50 <= r.severity < 70]
     low = [r for r in all_results if r.severity < 50]
 
     print("\n" + "=" * 60)
-    print(f"  SCAN COMPLETE in {format_duration(duration)}")
+    print(f"  SCAN COMPLETE in {format_duration(total_duration)}")
     print(f"  Total: {len(all_results)} findings")
     print(f"  Critical: {len(critical)} | High: {len(high)} | Medium: {len(medium)} | Low: {len(low)}")
 
@@ -158,10 +111,11 @@ def run_cli(args):
     if args.report:
         rg = ReportGenerator()
         path = rg.generate_html_report(
-            all_results, scan_duration=duration,
+            all_results, scan_duration=total_duration,
             player_name=args.player or "Unknown",
             staff_name=args.staff or "Staff",
             server_name=args.server or "Server",
+            mod_results=all_mod_results if all_mod_results else None,
         )
         print(f"Report generated: {path}")
 

@@ -43,11 +43,20 @@ class ProcessScanner:
             ))
             return results
 
+        # Get own PID to skip self
+        self_pid = os.getpid()
+        self_ppid = os.getppid() if hasattr(os, 'getppid') else 0
+
         processes = list(psutil.process_iter(['pid', 'name', 'exe', 'cmdline', 'create_time']))
         self.progress.start("Process Scanner", len(processes))
 
         for proc_info in processes:
             try:
+                pid = proc_info.info.get('pid', 0)
+                # Skip self and parent (the tool itself)
+                if pid in (self_pid, self_ppid, 0, 1):
+                    self.progress.update(proc_info.info.get('name', ''))
+                    continue
                 proc_results = self._scan_process(proc_info)
                 results.extend(proc_results)
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
@@ -101,8 +110,10 @@ class ProcessScanner:
                     ))
                     break
 
-        # Check command line for cheat indicators
-        if cmdline:
+        # Check command line for cheat indicators — ONLY for Java/Minecraft processes
+        # Scanning all process cmdlines causes false positives (Python keywords, etc.)
+        if cmdline and name in ('java.exe', 'javaw.exe', 'minecraft.exe',
+                                'java', 'javaw'):
             cmd_str = " ".join(cmdline)
             cmd_results = self.detector.scan_text(cmd_str, source="cmdline",
                                                    filepath=f"PID:{pid}")

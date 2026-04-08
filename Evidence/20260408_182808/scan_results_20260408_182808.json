@@ -1,0 +1,80 @@
+[
+  {
+    "scanner": "TestScanner",
+    "category": "cheat_client",
+    "name": "Wurst",
+    "description": "Wurst client detected",
+    "severity": 100,
+    "severity_label": "CRITICAL",
+    "filepath": "/mods/wurst.jar",
+    "line_number": 0,
+    "evidence": "Found in bytecode",
+    "details": {},
+    "timestamp": "2026-04-08 18:28:08"
+  },
+  {
+    "scanner": "ModsScanner",
+    "category": "cheat_module",
+    "name": "KillAura",
+    "description": "KillAura module found",
+    "severity": 95,
+    "severity_label": "CRITICAL",
+    "filepath": "/mods/hack.jar",
+    "line_number": 0,
+    "evidence": "Class: com/hack/KillAura",
+    "details": {},
+    "timestamp": "2026-04-08 18:28:08"
+  },
+  {
+    "scanner": "ProcessScanner",
+    "category": "suspicious_process",
+    "name": "cheatengine",
+    "description": "Cheat Engine running",
+    "severity": 100,
+    "severity_label": "CRITICAL",
+    "filepath": "",
+    "line_number": 0,
+    "evidence": "PID: 1234",
+    "details": {},
+    "timestamp": "2026-04-08 18:28:08"
+  },
+  {
+    "scanner": "BrowserScanner",
+    "category": "cheat_url",
+    "name": "wurstclient.net",
+    "description": "Cheat website visited",
+    "severity": 90,
+    "severity_label": "CRITICAL",
+    "filepath": "",
+    "line_number": 0,
+    "evidence": "https://wurstclient.net/download",
+    "details": {},
+    "timestamp": "2026-04-08 18:28:08"
+  },
+  {
+    "scanner": "KernelCheck",
+    "category": "cheat_driver",
+    "name": "dbk64.sys",
+    "description": "Cheat Engine driver",
+    "severity": 100,
+    "severity_label": "CRITICAL",
+    "filepath": "C:\\Windows\\System32\\drivers\\dbk64.sys",
+    "line_number": 0,
+    "evidence": "",
+    "details": {},
+    "timestamp": "2026-04-08 18:28:08"
+  },
+  {
+    "scanner": "MemoryScanner",
+    "category": "info",
+    "name": "Java process",
+    "description": "Java process found",
+    "severity": 20,
+    "severity_label": "INFO",
+    "filepath": "",
+    "line_number": 0,
+    "evidence": "",
+    "details": {},
+    "timestamp": "2026-04-08 18:28:08"
+  }
+]

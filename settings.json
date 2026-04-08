@@ -1,0 +1,19 @@
+{
+  "language": "id",
+  "theme": "dark",
+  "decompiler": "CFR",
+  "auto_update_db": true,
+  "deep_scan_mode": false,
+  "max_threads": 8,
+  "scan_timeout": 300,
+  "cache_enabled": true,
+  "evidence_auto_collect": true,
+  "kernel_check_enabled": true,
+  "memory_scan_enabled": true,
+  "network_scan_enabled": true,
+  "browser_scan_enabled": true,
+  "cfr_path": "",
+  "fernflower_path": "",
+  "procyon_path": "",
+  "vineflower_path": ""
+}

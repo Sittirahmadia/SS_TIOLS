@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>SS-Tools Report - TestPlayer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', system-ui, sans-serif; padding: 30px; }
+.header { text-align: center; padding: 40px 0; border-bottom: 2px solid #30363d; margin-bottom: 30px; }
+.header h1 { font-size: 28px; color: #58a6ff; margin-bottom: 10px; }
+.verdict { font-size: 48px; font-weight: 900; color: #FF1744; background: #2d0a0a; padding: 30px; border-radius: 16px; margin: 20px 0; text-align: center; border: 3px solid #FF1744; text-shadow: 0 0 20px #FF1744; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+.info-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px; }
+.info-card label { color: #8b949e; font-size: 12px; text-transform: uppercase; }
+.info-card .value { font-size: 20px; font-weight: 700; margin-top: 5px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 25px 0; }
+.stat { background: #161b22; border-radius: 8px; padding: 20px; text-align: center; border: 1px solid #30363d; }
+.stat .num { font-size: 36px; font-weight: 900; }
+.stat .label { color: #8b949e; margin-top: 5px; }
+h2 { color: #58a6ff; margin: 25px 0 15px; font-size: 22px; }
+.finding { background: #161b22; border-radius: 8px; padding: 15px; margin: 10px 0; }
+.finding-header { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+.badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; color: #fff; }
+.scanner-badge { background: #1f6feb; padding: 3px 8px; border-radius: 8px; font-size: 11px; }
+.category { color: #8b949e; font-size: 12px; }
+.finding-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+.finding-desc { color: #c9d1d9; font-size: 14px; }
+.finding-path { color: #8b949e; font-size: 12px; margin-top: 4px; word-break: break-all; }
+.finding-evidence { margin-top: 6px; }
+.finding-evidence code { background: #0d1117; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #f0883e; }
+.mod-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+.mod-table th, .mod-table td { padding: 10px; text-align: left; border-bottom: 1px solid #30363d; }
+.mod-table th { background: #161b22; color: #58a6ff; }
+.footer { text-align: center; padding: 30px 0; color: #8b949e; border-top: 1px solid #30363d; margin-top: 30px; }
+@media print { body { background: #fff; color: #000; } .finding { border: 1px solid #ddd; } }
+</style>
+</head>
+<body>
+<div class="header">
+    <h1>SS-Tools Ultimate v3.0.0 - Screenshare Report</h1>
+    <p>Generated: 2026-04-08 18:34:34</p>
+</div>
+
+<div class="verdict">CHEATER DETECTED</div>
+
+<div class="info-grid">
+    <div class="info-card"><label>Player</label><div class="value">TestPlayer</div></div>
+    <div class="info-card"><label>Staff</label><div class="value">TestStaff</div></div>
+    <div class="info-card"><label>Server</label><div class="value">TestServer</div></div>
+    <div class="info-card"><label>Scan Duration</label><div class="value">94ms</div></div>
+</div>
+
+<div class="stats">
+    <div class="stat"><div class="num" style="color:#FF1744;">0</div><div class="label">Critical</div></div>
+    <div class="stat"><div class="num" style="color:#FF9100;">3</div><div class="label">High</div></div>
+    <div class="stat"><div class="num" style="color:#FFD600;">0</div><div class="label">Medium</div></div>
+    <div class="stat"><div class="num" style="color:#00E676;">1</div><div class="label">Low/Info</div></div>
+</div>
+
+<h2>All Findings (4 total)</h2>
+
+            <div class="finding" style="border-left: 4px solid #FF9100;">
+                <div class="finding-header">
+                    <span class="badge" style="background:#FF9100;">HIGH (85)</span>
+                    <span class="scanner-badge">KeywordDetector</span>
+                    <span class="category">cheat_client</span>
+                </div>
+                <div class="finding-name">Lambda</div>
+                <div class="finding-desc">Cheat client detected: Lambda</div>
+                <div class="finding-path">Path: PID:27</div>
+                <div class="finding-evidence">Evidence: <code>...oop()
+
+        transport, protocol = await loop.connect_write_pipe(
+            lambda: asyncio.StreamReaderProtocol(asyncio.StreamReader()),
+            sys.stdout...</code></div>
+            </div>
+            
+            <div class="finding" style="border-left: 4px solid #FF9100;">
+                <div class="finding-header">
+                    <span class="badge" style="background:#FF9100;">HIGH (85)</span>
+                    <span class="scanner-badge">KeywordDetector</span>
+                    <span class="category">cheat_module</span>
+                </div>
+                <div class="finding-name">ESP</div>
+                <div class="finding-desc">Cheat module detected: ESP (render)</div>
+                <div class="finding-path">Path: PID:27</div>
+                <div class="finding-evidence">Evidence: <code>...},
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as response:
+                response.raise_for_status()
+                result = await...</code></div>
+            </div>
+            
+            <div class="finding" style="border-left: 4px solid #FF9100;">
+                <div class="finding-header">
+                    <span class="badge" style="background:#FF9100;">HIGH (85)</span>
+                    <span class="scanner-badge">KeywordDetector</span>
+                    <span class="category">cheat_module</span>
+                </div>
+                <div class="finding-name">Timer</div>
+                <div class="finding-desc">Cheat module detected: Timer (exploit)</div>
+                <div class="finding-path">Path: PID:27</div>
+                <div class="finding-evidence">Evidence: <code>...eleted: Set[str] = set()
+
+        self.debounce_delay = 0.5
+        self.upload_timer: Optional[asyncio.Task] = None
+        self.initial_watches_established = False...</code></div>
+            </div>
+            
+            <div class="finding" style="border-left: 4px solid #00E676;">
+                <div class="finding-header">
+                    <span class="badge" style="background:#00E676;">INFO (0)</span>
+                    <span class="scanner-badge">KernelCheck</span>
+                    <span class="category">info</span>
+                </div>
+                <div class="finding-name">Platform Warning</div>
+                <div class="finding-desc">Kernel Check hanya tersedia di Windows dengan pywin32</div>
+                
+                
+            </div>
+            
+
+
+
+<div class="footer">
+    <p>SS-Tools Ultimate v3.0.0 &copy; 2026 | Anti-Cheat Screenshare Tool</p>
+    <p>This report is auto-generated and should be reviewed by staff.</p>
+</div>
+</body>
+</html>
