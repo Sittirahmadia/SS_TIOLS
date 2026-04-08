@@ -204,16 +204,32 @@ class KeywordDetector:
         return results
 
     def scan_filename(self, filename: str, filepath: str = "") -> List[ScanResult]:
-        """Scan a filename against cheat file signatures."""
+        """Scan a filename against cheat file signatures.
+        Type-aware: 'jar' entries only match .jar files, 'folder' entries only match
+        non-.jar paths. Prevents folder entries from false-flagging JAR filenames.
+        """
         results = []
         fname_lower = filename.lower()
+        is_jar = fname_lower.endswith('.jar')
+        # Strip extension for matching (e.g. "wurst-client-v7" from "wurst-client-v7.35.jar")
+        fname_stem = fname_lower.rsplit('.jar', 1)[0] if is_jar else fname_lower
+
         for entry in self.db.cheat_files:
-            if entry["name"].lower() in fname_lower:
+            entry_name = entry["name"].lower()
+            entry_type = entry.get("type", "file")
+
+            # Type-aware matching: don't let folder entries match .jar files
+            if is_jar and entry_type == "folder":
+                continue  # Skip folder entries when scanning a .jar filename
+            if not is_jar and entry_type == "jar":
+                continue  # Skip jar entries when scanning a non-.jar path
+
+            if entry_name in fname_lower:
                 results.append(ScanResult(
                     scanner="KeywordDetector",
                     category="cheat_file",
                     name=entry["name"],
-                    description=f"Cheat {entry.get('type', 'file')} detected: {entry['name']}",
+                    description=f"Cheat {entry_type} detected: {entry['name']}",
                     severity=entry.get("severity", 90),
                     filepath=filepath,
                     evidence=filename,
