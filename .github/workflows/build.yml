@@ -1,0 +1,216 @@
+name: Build SS-Tools Ultimate
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Verify project structure
+        run: |
+          python -c "import json; data=json.load(open('data/cheat_keywords.json','r',encoding='utf-8')); print(f'Database v{data[\"meta\"][\"version\"]} loaded: {data[\"meta\"][\"total_entries\"]} entries')"
+          python -c "from core.config import APP_NAME, APP_VERSION; print(f'{APP_NAME} v{APP_VERSION}')"
+          python -c "from core.database import CheatDatabase; db=CheatDatabase(); print(f'DB OK: {len(db.cheat_clients)} clients, {len(db.cheat_modules)} modules, {len(db.kernel_driver_signatures)} kernel sigs')"
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller ss_tools.spec
+          dir dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SS-Tools-Ultimate-Windows-x64
+          path: dist/SS-Tools-Ultimate.exe
+          retention-days: 90
+
+  build-linux-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb-xinerama0 libxcb-cursor0 libegl1
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyQt6 psutil opencv-python-headless Pillow pyinstaller
+
+      - name: Run syntax check
+        run: |
+          python -m py_compile main.py
+          python -m py_compile core/config.py
+          python -m py_compile core/utils.py
+          python -m py_compile core/database.py
+          python -m py_compile core/keyword_detector.py
+          python -m py_compile core/minecraft_scanner.py
+          python -m py_compile core/mods_scanner.py
+          python -m py_compile core/kernel_check.py
+          python -m py_compile core/process_scanner.py
+          python -m py_compile core/string_deleted_scanner.py
+          python -m py_compile core/browser_scanner.py
+          python -m py_compile core/deleted_file_detector.py
+          python -m py_compile core/memory_scanner.py
+          python -m py_compile core/network_scanner.py
+          python -m py_compile core/evidence_collector.py
+          python -m py_compile gui/styles.py
+          python -m py_compile gui/i18n.py
+          python -m py_compile gui/main_window.py
+
+      - name: Validate database
+        run: |
+          python -c "
+          import json
+          with open('data/cheat_keywords.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          meta = data['meta']
+          print(f'Database Version: {meta[\"version\"]}')
+          print(f'Total Entries: {meta[\"total_entries\"]}')
+          categories = [
+              ('cheat_clients', 'Cheat Clients'),
+              ('cheat_modules', 'Cheat Modules'),
+              ('suspicious_methods', 'Suspicious Methods'),
+              ('suspicious_imports', 'Suspicious Imports'),
+              ('suspicious_strings', 'Suspicious Strings'),
+              ('cheat_files', 'Cheat Files'),
+              ('cheat_urls', 'Cheat URLs'),
+              ('cheat_developers', 'Cheat Developers'),
+              ('obfuscation_patterns', 'Obfuscation Patterns'),
+              ('bytecode_signatures', 'Bytecode Signatures'),
+              ('kernel_driver_signatures', 'Kernel Driver Signatures'),
+              ('suspicious_processes', 'Suspicious Processes'),
+              ('whitelist_mods', 'Whitelist Mods'),
+              ('whitelist_processes', 'Whitelist Processes'),
+          ]
+          total = 0
+          for key, label in categories:
+              count = len(data.get(key, []))
+              total += count
+              print(f'  {label}: {count}')
+          print(f'Actual Total Entries: {total}')
+          assert total >= 300, f'Database must have 300+ entries, got {total}'
+          print('Database validation PASSED')
+          "
+
+      - name: Test core imports
+        run: |
+          python -c "
+          from core.config import AppSettings, APP_NAME, APP_VERSION
+          from core.utils import ScanResult, ScanProgress, severity_label
+          from core.database import CheatDatabase
+          from core.keyword_detector import KeywordDetector
+
+          # Test database loading
+          db = CheatDatabase()
+          assert len(db.cheat_clients) > 0
+          assert len(db.cheat_modules) > 0
+          assert len(db.kernel_driver_signatures) > 0
+
+          # Test keyword detector
+          detector = KeywordDetector()
+          results = detector.scan_text('wurst client killaura fly hack')
+          assert len(results) > 0, 'Keyword detector should find matches'
+          print(f'Keyword detector found {len(results)} matches in test string')
+
+          # Test fuzzy matching
+          fuzzy = detector.fuzzy_scan('wrst cliient', threshold=0.7)
+          print(f'Fuzzy matching found {len(fuzzy)} potential matches')
+
+          # Test URL scanning
+          url_results = detector.scan_url('https://wurstclient.net/download')
+          assert len(url_results) > 0, 'URL scanner should detect cheat URLs'
+          print(f'URL scanner detected {len(url_results)} cheat URLs')
+
+          # Test process scanning
+          proc_results = detector.scan_process('cheatengine.exe')
+          assert len(proc_results) > 0, 'Process scanner should detect cheat processes'
+
+          # Test settings
+          settings = AppSettings()
+          assert settings.decompiler == 'CFR'
+          assert settings.language == 'id'
+
+          print('All core tests PASSED')
+          "
+
+      - name: Test CLI mode help
+        run: |
+          python main.py --help
+
+  release:
+    needs: [build-windows, build-linux-test]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SS-Tools-Ultimate-Windows-x64
+          path: dist/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/SS-Tools-Ultimate.exe
+          body: |
+            ## SS-Tools Ultimate - New Release
+
+            ### What's included:
+            - Single .exe file (no installation required)
+            - Built-in cheat database (350+ entries)
+            - All scanner modules integrated
+            - Indonesian & English language support
+
+            ### How to use:
+            1. Download `SS-Tools-Ultimate.exe`
+            2. Run as Administrator for best results
+            3. Follow the built-in guide
+
+            ### Minimum Requirements:
+            - Windows 10/11 (64-bit)
+            - 4 GB RAM
+            - 200 MB disk space
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

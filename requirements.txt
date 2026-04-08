@@ -1,0 +1,24 @@
+# SS-Tools Ultimate v3.0 - Dependencies
+# Install: pip install -r requirements.txt
+
+# GUI Framework
+PyQt6>=6.6.0
+PyQt6-Qt6>=6.6.0
+PyQt6-sip>=13.6.0
+
+# System & Process
+psutil>=5.9.0
+
+# Windows-specific (install on Windows only)
+pywin32>=306; sys_platform == 'win32'
+pefile>=2023.2.7; sys_platform == 'win32'
+
+# Image processing (for screenshot analyzer)
+opencv-python-headless>=4.9.0
+Pillow>=10.0.0
+
+# Packaging
+pyinstaller>=6.3.0
+
+# Optional: for enhanced bytecode analysis
+# capstone>=5.0.0
