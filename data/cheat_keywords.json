@@ -1,8 +1,8 @@
 {
   "meta": {
-    "version": "3.2.0",
+    "version": "3.3.0",
     "last_updated": "2026-04-08",
-    "total_entries": 608,
+    "total_entries": 711,
     "update_url": "https://raw.githubusercontent.com/Sittirahmadia/SS_TIOLS/main/data/cheat_keywords.json",
     "description": "SS-Tools Ultimate Cheat Signature Database"
   },
@@ -650,6 +650,133 @@
       ],
       "severity": 85,
       "category": "cpvp_client"
+    },
+    {
+      "name": "ZenithMacros",
+      "aliases": [
+        "zenith macros",
+        "zenithmacros",
+        "zenith macro",
+        "zenithmacro",
+        "zenith pvp macro"
+      ],
+      "severity": 100,
+      "category": "macro_client"
+    },
+    {
+      "name": "Zenith Client",
+      "aliases": [
+        "zenith client",
+        "zenithclient",
+        "zenith ghost",
+        "zenithdlc"
+      ],
+      "severity": 100,
+      "category": "macro_client"
+    },
+    {
+      "name": "Xenith Macro",
+      "aliases": [
+        "xenith macro",
+        "xenithmacro",
+        "xenith",
+        "veyzyn"
+      ],
+      "severity": 100,
+      "category": "macro_client"
+    },
+    {
+      "name": "198 Macros",
+      "aliases": [
+        "198 macros",
+        "198macros",
+        "198m",
+        "198m macros",
+        "198 macro"
+      ],
+      "severity": 100,
+      "category": "macro_client"
+    },
+    {
+      "name": "Twiez Macro",
+      "aliases": [
+        "twiez macro",
+        "twiez-macro",
+        "twiezmacro"
+      ],
+      "severity": 100,
+      "category": "macro_client"
+    },
+    {
+      "name": "ToadClicker",
+      "aliases": [
+        "toadclicker",
+        "toad clicker",
+        "toad auto clicker"
+      ],
+      "severity": 95,
+      "category": "macro_tool"
+    },
+    {
+      "name": "Chione Macro",
+      "aliases": [
+        "chione",
+        "chione macro",
+        "chione autoclicker",
+        "chione.exe"
+      ],
+      "severity": 95,
+      "category": "macro_tool"
+    },
+    {
+      "name": "Phobot",
+      "aliases": [
+        "phobot",
+        "phobot crystal",
+        "3arthqu4ke phobot"
+      ],
+      "severity": 100,
+      "category": "macro_client"
+    },
+    {
+      "name": "Glazed Client",
+      "aliases": [
+        "glazed client",
+        "glazedclient",
+        "glazed addon"
+      ],
+      "severity": 95,
+      "category": "cpvp_client"
+    },
+    {
+      "name": "Lucid Addon",
+      "aliases": [
+        "lucid addon",
+        "lucid-addon",
+        "helixcraft lucid"
+      ],
+      "severity": 90,
+      "category": "cpvp_client"
+    },
+    {
+      "name": "Keyran",
+      "aliases": [
+        "keyran",
+        "keyran macro",
+        "keyran.net"
+      ],
+      "severity": 85,
+      "category": "macro_platform"
+    },
+    {
+      "name": "BotMek",
+      "aliases": [
+        "botmek",
+        "botmek macro",
+        "botmek.com"
+      ],
+      "severity": 85,
+      "category": "macro_platform"
     }
   ],
   "cheat_modules": [
@@ -1685,6 +1812,106 @@
       "pattern": "reflection.*invoke",
       "severity": 70,
       "category": "evasion"
+    },
+    {
+      "pattern": "zenithmacros",
+      "severity": 100,
+      "category": "macro"
+    },
+    {
+      "pattern": "zenith.?macro",
+      "severity": 100,
+      "category": "macro"
+    },
+    {
+      "pattern": "198.?macro",
+      "severity": 100,
+      "category": "macro"
+    },
+    {
+      "pattern": "twiez.?macro",
+      "severity": 100,
+      "category": "macro"
+    },
+    {
+      "pattern": "toadclicker",
+      "severity": 95,
+      "category": "macro"
+    },
+    {
+      "pattern": "chione.*click",
+      "severity": 95,
+      "category": "macro"
+    },
+    {
+      "pattern": "keyran.*macro",
+      "severity": 80,
+      "category": "macro"
+    },
+    {
+      "pattern": "botmek.*macro",
+      "severity": 80,
+      "category": "macro"
+    },
+    {
+      "pattern": "anchor.?macro",
+      "severity": 95,
+      "category": "macro"
+    },
+    {
+      "pattern": "crystal.?macro",
+      "severity": 95,
+      "category": "macro"
+    },
+    {
+      "pattern": "sword.?macro",
+      "severity": 95,
+      "category": "macro"
+    },
+    {
+      "pattern": "mace.?macro",
+      "severity": 95,
+      "category": "macro"
+    },
+    {
+      "pattern": "totem.?macro",
+      "severity": 90,
+      "category": "macro"
+    },
+    {
+      "pattern": "pearl.?macro",
+      "severity": 85,
+      "category": "macro"
+    },
+    {
+      "pattern": "autorod|auto.?rod",
+      "severity": 85,
+      "category": "macro"
+    },
+    {
+      "pattern": "butterfly.?click",
+      "severity": 80,
+      "category": "macro"
+    },
+    {
+      "pattern": "double.?click.*mouse",
+      "severity": 85,
+      "category": "macro"
+    },
+    {
+      "pattern": "sprint.?reset|auto.?sprint",
+      "severity": 75,
+      "category": "macro"
+    },
+    {
+      "pattern": "w.?tap.*macro|wtap",
+      "severity": 80,
+      "category": "macro"
+    },
+    {
+      "pattern": "anti.?afk.*macro",
+      "severity": 50,
+      "category": "macro"
     }
   ],
   "cheat_files": [
@@ -2787,6 +3014,191 @@
       "name": "anchormacro",
       "type": "jar",
       "severity": 95
+    },
+    {
+      "name": "ZenithMacros.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "zenithmacros",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "zenith-macros",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "zenith-macro",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "zenithmacro",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "zenith-client",
+      "type": "jar",
+      "severity": 100
+    },
+    {
+      "name": "zenithclient",
+      "type": "jar",
+      "severity": 100
+    },
+    {
+      "name": "198-Macros.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "198macros",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "198macros",
+      "type": "jar",
+      "severity": 100
+    },
+    {
+      "name": "198-macros",
+      "type": "jar",
+      "severity": 100
+    },
+    {
+      "name": "198m",
+      "type": "folder",
+      "severity": 95
+    },
+    {
+      "name": "xenith-macro",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "xenithmacro",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "twiez-macro",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "twiezmacro",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "toadclicker.exe",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "toadclicker",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "Chione.exe",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "chione",
+      "type": "file",
+      "severity": 90
+    },
+    {
+      "name": "phobot",
+      "type": "jar",
+      "severity": 100
+    },
+    {
+      "name": "glazed",
+      "type": "jar",
+      "severity": 90
+    },
+    {
+      "name": "glazed-addon",
+      "type": "jar",
+      "severity": 95
+    },
+    {
+      "name": "lucid-addon",
+      "type": "jar",
+      "severity": 90
+    },
+    {
+      "name": "crystal-macro",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "anchor-macro",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "sword-macro",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "mace-macro",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "autocrystal.ahk",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "autoclicker.ahk",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "butterfly.ahk",
+      "type": "file",
+      "severity": 90
+    },
+    {
+      "name": "wtap.ahk",
+      "type": "file",
+      "severity": 90
+    },
+    {
+      "name": "auto_rod.ahk",
+      "type": "file",
+      "severity": 85
+    },
+    {
+      "name": "sprint_reset.ahk",
+      "type": "file",
+      "severity": 80
+    },
+    {
+      "name": "pvp_macro.ahk",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "mc_macro.ahk",
+      "type": "file",
+      "severity": 90
+    },
+    {
+      "name": "minecraft_macro.ahk",
+      "type": "file",
+      "severity": 90
     }
   ],
   "cheat_urls": [
@@ -3034,6 +3446,81 @@
       "pattern": "dsc.gg/cyemer",
       "severity": 100,
       "category": "discord"
+    },
+    {
+      "pattern": "zenithmacros.store",
+      "severity": 100,
+      "category": "website"
+    },
+    {
+      "pattern": "198macros.com",
+      "severity": 100,
+      "category": "website"
+    },
+    {
+      "pattern": "198-macros.com",
+      "severity": 100,
+      "category": "website"
+    },
+    {
+      "pattern": "veyzyn.lol",
+      "severity": 100,
+      "category": "website"
+    },
+    {
+      "pattern": "keyran.net/en/games/minecraft",
+      "severity": 85,
+      "category": "website"
+    },
+    {
+      "pattern": "botmek.com/share",
+      "severity": 85,
+      "category": "website"
+    },
+    {
+      "pattern": "clickcrystals.xyz",
+      "severity": 85,
+      "category": "website"
+    },
+    {
+      "pattern": "tanlines.github.io/minecraft",
+      "severity": 90,
+      "category": "website"
+    },
+    {
+      "pattern": "autoclicker.org",
+      "severity": 70,
+      "category": "website"
+    },
+    {
+      "pattern": "autoclicker.io",
+      "severity": 70,
+      "category": "website"
+    },
+    {
+      "pattern": "gtautoclicker.org",
+      "severity": 70,
+      "category": "website"
+    },
+    {
+      "pattern": "speedautoclicker.com",
+      "severity": 70,
+      "category": "website"
+    },
+    {
+      "pattern": "glazedclient.com",
+      "severity": 95,
+      "category": "website"
+    },
+    {
+      "pattern": "mc-mod.net/198-macros",
+      "severity": 95,
+      "category": "website"
+    },
+    {
+      "pattern": "9minecraft.net/zenith-client",
+      "severity": 95,
+      "category": "website"
     }
   ],
   "cheat_developers": [
@@ -3176,6 +3663,51 @@
       "name": "seasnail",
       "description": "Meteor Client co-developer",
       "severity": 90
+    },
+    {
+      "name": "zprestige_",
+      "description": "198 Macros / Prestige Client developer",
+      "severity": 100
+    },
+    {
+      "name": "twiez",
+      "description": "Twiez Macro developer",
+      "severity": 90
+    },
+    {
+      "name": "Steve987321",
+      "description": "ToadClicker developer",
+      "severity": 80
+    },
+    {
+      "name": "LennardFe",
+      "description": "Chione autoclicker developer",
+      "severity": 80
+    },
+    {
+      "name": "ItziSpyder",
+      "description": "ClickCrystals developer",
+      "severity": 85
+    },
+    {
+      "name": "3arthqu4ke",
+      "description": "Phobot crystal bot developer",
+      "severity": 90
+    },
+    {
+      "name": "zenithdlc",
+      "description": "Zenith Client developer",
+      "severity": 95
+    },
+    {
+      "name": "Kideneb",
+      "description": "MinecraftMacroTool developer",
+      "severity": 75
+    },
+    {
+      "name": "tanlines",
+      "description": "AHK Minecraft autoclicker scripts author",
+      "severity": 80
     }
   ],
   "obfuscation_patterns": [
@@ -3670,6 +4202,56 @@
       "name": "logitech.*macro",
       "description": "Logitech macro configuration",
       "severity": 70
+    },
+    {
+      "name": "zenithmacros",
+      "description": "ZenithMacros PvP macro tool",
+      "severity": 100
+    },
+    {
+      "name": "198-macros",
+      "description": "198 Macros PvP macro tool",
+      "severity": 100
+    },
+    {
+      "name": "198macros",
+      "description": "198 Macros PvP macro tool",
+      "severity": 100
+    },
+    {
+      "name": "twiez-macro",
+      "description": "Twiez PvP macro tool",
+      "severity": 100
+    },
+    {
+      "name": "toadclicker",
+      "description": "ToadClicker auto-clicker",
+      "severity": 95
+    },
+    {
+      "name": "chione",
+      "description": "Chione autoclicker/macro",
+      "severity": 95
+    },
+    {
+      "name": "xenithmacro",
+      "description": "Xenith macro tool",
+      "severity": 100
+    },
+    {
+      "name": "keyran",
+      "description": "Keyran macro platform",
+      "severity": 80
+    },
+    {
+      "name": "botmek",
+      "description": "BotMek macro emulator",
+      "severity": 80
+    },
+    {
+      "name": "minecraftmacrotool",
+      "description": "MinecraftMacroTool movement macros",
+      "severity": 90
     }
   ],
   "whitelist_mods": [
