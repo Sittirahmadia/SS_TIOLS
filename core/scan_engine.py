@@ -217,6 +217,57 @@ class ScanEngine:
                 return scan_results
             tasks.append(ScannerTask("Mods Scanner", mods_scan, timeout=120))
 
+        # New Scanners - Registry, VPN/Proxy, Service, Clipboard, GPU Driver
+        if scan_type in ("full", "registry"):
+            def registry_scan():
+                try:
+                    from core.registry_scanner import RegistryScanner
+                    return RegistryScanner(progress).scan()
+                except Exception as e:
+                    logger.error(f"Registry Scanner failed: {e}")
+                    return []
+            tasks.append(ScannerTask("Registry Scanner", registry_scan, timeout=30))
+
+        if scan_type in ("full", "vpn_proxy"):
+            def vpn_proxy_scan():
+                try:
+                    from core.vpn_proxy_scanner import VPNProxyScanner
+                    return VPNProxyScanner(progress).scan()
+                except Exception as e:
+                    logger.error(f"VPN/Proxy Scanner failed: {e}")
+                    return []
+            tasks.append(ScannerTask("VPN/Proxy Scanner", vpn_proxy_scan, timeout=25))
+
+        if scan_type in ("full", "service"):
+            def service_scan():
+                try:
+                    from core.service_scanner import ServiceScanner
+                    return ServiceScanner(progress).scan()
+                except Exception as e:
+                    logger.error(f"Service Scanner failed: {e}")
+                    return []
+            tasks.append(ScannerTask("Service Scanner", service_scan, timeout=30))
+
+        if scan_type in ("full", "clipboard"):
+            def clipboard_scan():
+                try:
+                    from core.clipboard_scanner import ClipboardScanner
+                    return ClipboardScanner(progress).scan()
+                except Exception as e:
+                    logger.error(f"Clipboard Scanner failed: {e}")
+                    return []
+            tasks.append(ScannerTask("Clipboard Scanner", clipboard_scan, timeout=10))
+
+        if scan_type in ("full", "gpu"):
+            def gpu_scan():
+                try:
+                    from core.gpu_driver_scanner import GPUDriverScanner
+                    return GPUDriverScanner(progress).scan()
+                except Exception as e:
+                    logger.error(f"GPU Driver Scanner failed: {e}")
+                    return []
+            tasks.append(ScannerTask("GPU Driver Scanner", gpu_scan, timeout=20))
+
         return tasks
 
     def run_scan(self, scan_type: str = "full", mod_dir: str = "",
