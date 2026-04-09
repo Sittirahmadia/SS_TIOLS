@@ -1,8 +1,8 @@
 {
   "meta": {
-    "version": "3.3.0",
-    "last_updated": "2026-04-08",
-    "total_entries": 711,
+    "version": "3.4.0",
+    "last_updated": "2026-04-09",
+    "total_entries": 742,
     "update_url": "https://raw.githubusercontent.com/Sittirahmadia/SS_TIOLS/main/data/cheat_keywords.json",
     "description": "SS-Tools Ultimate Cheat Signature Database"
   },
@@ -658,7 +658,10 @@
         "zenithmacros",
         "zenith macro",
         "zenithmacro",
-        "zenith pvp macro"
+        "zenith pvp macro",
+        "zenith individual macro",
+        "zenith crystal bundle",
+        "zenith mace bundle"
       ],
       "severity": 100,
       "category": "macro_client"
@@ -1346,6 +1349,73 @@
       ],
       "severity": 95,
       "category": "combat"
+    },
+    {
+      "name": "Single Anchor",
+      "aliases": [
+        "single anchor",
+        "single_anchor",
+        "singleanchor",
+        "zenith single anchor"
+      ],
+      "severity": 100,
+      "category": "macro_module"
+    },
+    {
+      "name": "Safe Anchor",
+      "aliases": [
+        "safe anchor",
+        "safe_anchor",
+        "safeanchor",
+        "zenith safe anchor"
+      ],
+      "severity": 100,
+      "category": "macro_module"
+    },
+    {
+      "name": "Shield Break",
+      "aliases": [
+        "shield break",
+        "shield_break",
+        "shieldbreak",
+        "auto shield break",
+        "zenith shield break"
+      ],
+      "severity": 95,
+      "category": "macro_module"
+    },
+    {
+      "name": "Stun Slam",
+      "aliases": [
+        "stun slam",
+        "stun_slam",
+        "stunslam",
+        "zenith stun slam"
+      ],
+      "severity": 100,
+      "category": "macro_module"
+    },
+    {
+      "name": "Pearl Catch",
+      "aliases": [
+        "pearl catch",
+        "pearl_catch",
+        "pearlcatch",
+        "zenith pearl catch"
+      ],
+      "severity": 95,
+      "category": "macro_module"
+    },
+    {
+      "name": "Breach Swap",
+      "aliases": [
+        "breach swap",
+        "breach_swap",
+        "breachswap",
+        "zenith breach swap"
+      ],
+      "severity": 100,
+      "category": "macro_module"
     }
   ],
   "suspicious_methods": [
@@ -1911,6 +1981,46 @@
     {
       "pattern": "anti.?afk.*macro",
       "severity": 50,
+      "category": "macro"
+    },
+    {
+      "pattern": "single.?anchor",
+      "severity": 95,
+      "category": "macro"
+    },
+    {
+      "pattern": "safe.?anchor",
+      "severity": 95,
+      "category": "macro"
+    },
+    {
+      "pattern": "shield.?break",
+      "severity": 90,
+      "category": "macro"
+    },
+    {
+      "pattern": "stun.?slam",
+      "severity": 100,
+      "category": "macro"
+    },
+    {
+      "pattern": "pearl.?catch",
+      "severity": 90,
+      "category": "macro"
+    },
+    {
+      "pattern": "breach.?swap",
+      "severity": 100,
+      "category": "macro"
+    },
+    {
+      "pattern": "closet.?cheat",
+      "severity": 100,
+      "category": "macro"
+    },
+    {
+      "pattern": "individual.?macro",
+      "severity": 80,
       "category": "macro"
     }
   ],
@@ -3199,6 +3309,91 @@
       "name": "minecraft_macro.ahk",
       "type": "file",
       "severity": 90
+    },
+    {
+      "name": "single-anchor.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "singleanchor.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "safe-anchor.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "safeanchor.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "shield-break.exe",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "shieldbreak.exe",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "stun-slam.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "stunslam.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "pearl-catch.exe",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "pearlcatch.exe",
+      "type": "file",
+      "severity": 95
+    },
+    {
+      "name": "breach-swap.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "breachswap.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "triggerbot.exe",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "crystal-bundle",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "mace-bundle",
+      "type": "file",
+      "severity": 100
+    },
+    {
+      "name": "zenithmacros",
+      "type": "folder",
+      "severity": 100
+    },
+    {
+      "name": "zenith-macros",
+      "type": "folder",
+      "severity": 100
     }
   ],
   "cheat_urls": [
