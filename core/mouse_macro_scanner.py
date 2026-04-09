@@ -99,8 +99,12 @@ SUSPICIOUS_MACRO_PATTERNS = {
 }
 
 # Minimum delay thresholds (ms) - below these = inhuman/macro
-INHUMAN_DELAY_MS = 30       # < 30ms between clicks = definitely macro
-SUSPICIOUS_DELAY_MS = 50    # < 50ms = very likely macro
+# Minecraft PvP macro typical delays: 20ms, 25ms, 30ms, 35ms
+# Human click speed: ~70-170ms between clicks (6-14 CPS)
+# Butterfly click: ~50-70ms (15-20 CPS)
+# Anything below 50ms = macro territory
+INHUMAN_DELAY_MS = 40       # < 40ms = definitely macro (covers 20, 25, 30, 35ms range)
+SUSPICIOUS_DELAY_MS = 55    # < 55ms = very likely macro
 FAST_DELAY_MS = 80          # < 80ms = suspicious for non-gaming mice
 
 
@@ -1169,12 +1173,18 @@ class MouseMacroScanner:
                     f"\n"
                     f"Estimasi CPS: ~{est_cps} clicks/second\n"
                     f"\n"
-                    f"⚠ Kecepatan klik manusia normal: 6-14 CPS\n"
-                    f"  Butterfly click: 15-20 CPS\n"
-                    f"  Delay {min_delay}ms = ~{round(1000/max(min_delay,1))} CPS → PASTI MACRO\n"
+                    f"⚠ Perbandingan kecepatan klik:\n"
+                    f"  Manusia normal     : 70-170ms (6-14 CPS)\n"
+                    f"  Butterfly click    : 50-70ms  (15-20 CPS)\n"
+                    f"  Jitter click       : 50-65ms  (15-20 CPS)\n"
+                    f"  ─────────────────────────────────────\n"
+                    f"  Macro Logitech khas: 20-35ms  (28-50 CPS) ← BUKAN MANUSIA\n"
+                    f"  Delay ditemukan    : {min_delay}ms = ~{round(1000/max(min_delay,1))} CPS\n"
                     f"\n"
-                    f"  Delay di bawah 30ms TIDAK MUNGKIN dilakukan manusia.\n"
-                    f"  Ini bukti kuat penggunaan autoclicker/macro.\n"
+                    f"  Delay 20-35ms adalah range KHAS macro Logitech/Razer\n"
+                    f"  untuk Minecraft PvP (crystal swap, autoclicker, anchor).\n"
+                    f"  Delay di bawah 40ms TIDAK MUNGKIN dilakukan tangan manusia.\n"
+                    f"  Ini BUKTI KUAT penggunaan macro.\n"
                 )
                 results.append(ScanResult(
                     scanner="MouseMacroScanner",
@@ -1190,22 +1200,42 @@ class MouseMacroScanner:
                 ))
             elif min_delay < SUSPICIOUS_DELAY_MS and inhuman_count >= 2:
                 est_cps = round(1000 / max(avg_delay, 1))
+                # Check if delay falls in typical Logitech macro range (20-35ms)
+                in_logitech_range = 15 <= min_delay <= 40
+                sev = 90 if in_logitech_range else 75
                 keterangan = (
                     f"\n"
                     f"═══ KECEPATAN KLIK MENCURIGAKAN ═══\n"
                     f"Software: {software}\n"
+                    f"File: {os.path.basename(filepath)}\n"
+                    f"\n"
+                    f"Analisis Delay:\n"
                     f"  Delay minimum: {min_delay}ms (~{round(1000/max(min_delay,1))} CPS)\n"
                     f"  Delay rata-rata: {avg_delay:.0f}ms (~{est_cps} CPS)\n"
-                    f"  Aksi cepat: {inhuman_count}\n"
+                    f"  Aksi cepat (< {SUSPICIOUS_DELAY_MS}ms): {inhuman_count}\n"
                     f"\n"
-                    f"  Perlu investigasi lebih lanjut.\n"
                 )
+                if in_logitech_range:
+                    keterangan += (
+                        f"⚠ Delay {min_delay}ms MASUK RANGE KHAS macro Logitech/Razer:\n"
+                        f"  20ms, 25ms, 30ms, 35ms → delay yang umum di-set\n"
+                        f"  di macro Logitech G Hub / Razer Synapse untuk\n"
+                        f"  Minecraft Crystal PvP, autoclicker, dan anchor macro.\n"
+                        f"\n"
+                        f"  Manusia normal: 70-170ms (6-14 CPS)\n"
+                        f"  Delay {min_delay}ms = {round(1000/max(min_delay,1))} CPS → PASTI MACRO\n"
+                    )
+                else:
+                    keterangan += (
+                        f"  Delay ini lebih cepat dari kemampuan manusia normal.\n"
+                        f"  Perlu investigasi lebih lanjut.\n"
+                    )
                 results.append(ScanResult(
                     scanner="MouseMacroScanner",
                     category="suspicious_timing",
                     name="Suspicious Click Speed",
                     description=f"[{software}] Kecepatan klik mencurigakan: {min_delay}ms (~{est_cps} CPS)",
-                    severity=75,
+                    severity=sev,
                     filepath=filepath,
                     evidence=keterangan,
                     details={"software": software, "min_delay": min_delay,
