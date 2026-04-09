@@ -608,7 +608,7 @@ class MouseMacroScanner:
 
     # ── Logitech G Hub ────────────────────────────────────────────────
     def _scan_logitech_ghub(self) -> List[ScanResult]:
-        """Scan Logitech G Hub settings.db (SQLite with JSON macro data)."""
+        """Scan Logitech G Hub settings.db, Lua scripts, and web-downloaded macros."""
         results = []
         ghub_paths = [
             os.path.join(os.environ.get("LOCALAPPDATA", ""), "LGHUB", "settings.db"),
@@ -628,7 +628,7 @@ class MouseMacroScanner:
             except Exception as e:
                 logger.debug(f"G Hub scan error: {e}")
 
-        # Also scan Lua script files (G Hub supports Lua macros)
+        # Scan Lua scripts in G Hub directory
         lua_dirs = [
             os.path.join(os.environ.get("LOCALAPPDATA", ""), "LGHUB"),
             os.path.join(os.environ.get("APPDATA", ""), "LGHUB"),
@@ -636,6 +636,108 @@ class MouseMacroScanner:
         for lua_dir in lua_dirs:
             if os.path.exists(lua_dir):
                 results.extend(self._scan_lua_scripts(lua_dir))
+
+        # Scan web-downloaded Lua macros from common download locations
+        # People download .lua scripts from logitechmacro.com, GitHub, etc.
+        # and either run them directly or import into G Hub
+        results.extend(self._scan_web_downloaded_lua_macros())
+
+        return results
+
+    def _scan_web_downloaded_lua_macros(self) -> List[ScanResult]:
+        """Scan Downloads/Desktop/Documents for Lua macro scripts from the web.
+        Only flags Minecraft/gaming-related Lua scripts, not general Lua files."""
+        results = []
+        home = os.environ.get("USERPROFILE", str(Path.home()))
+        search_dirs = [
+            os.path.join(home, "Downloads"),
+            os.path.join(home, "Desktop"),
+            os.path.join(home, "Documents"),
+            os.path.join(home, "Documents", "Logitech"),
+            os.path.join(home, "Documents", "LGHUB"),
+        ]
+
+        # Indicators that a .lua file is a gaming/Minecraft macro
+        gaming_lua_indicators = [
+            # Logitech G Hub API functions
+            "PressMouseButton", "ReleaseMouseButton", "PressAndReleaseMouseButton",
+            "EnablePrimaryMouseButtonEvents", "IsMouseButtonPressed",
+            "OnEvent", "MOUSE_BUTTON_PRESSED", "MOUSE_BUTTON_RELEASED",
+            "PressKey", "ReleaseKey", "PressAndReleaseKey",
+            # Gaming/Minecraft indicators
+            "minecraft", "pvp", "crystal", "anchor", "autoclicker",
+            "auto_click", "recoil", "no_recoil", "rapid_fire",
+            "macro", "gaming",
+        ]
+
+        for search_dir in search_dirs:
+            if not search_dir or not os.path.exists(search_dir):
+                continue
+            try:
+                for item in os.listdir(search_dir):
+                    if not item.lower().endswith('.lua'):
+                        continue
+                    fpath = os.path.join(search_dir, item)
+                    if not os.path.isfile(fpath):
+                        continue
+                    try:
+                        content = safe_read_file(fpath)
+                        if not content or len(content) < 20:
+                            continue
+                        # Check if this Lua file is a gaming macro
+                        is_gaming = any(ind in content for ind in gaming_lua_indicators)
+                        if not is_gaming:
+                            continue  # Skip non-gaming Lua files
+
+                        # It's a gaming Lua macro — analyze it
+                        lua_results = self._analyze_lua_macro(content, fpath)
+                        if lua_results:
+                            for r in lua_results:
+                                r.description = f"[Web-Downloaded Lua Macro] {r.description}"
+                                r.evidence = (
+                                    f"\n═══ LUA MACRO DARI WEB TERDETEKSI ═══\n"
+                                    f"File: {item}\n"
+                                    f"Lokasi: {fpath}\n"
+                                    f"\n"
+                                    f"File .lua ini kemungkinan didownload dari web\n"
+                                    f"(logitechmacro.com, GitHub, forum, dll) dan\n"
+                                    f"digunakan di Logitech G Hub sebagai macro gaming.\n"
+                                    f"\n" + r.evidence
+                                )
+                            results.extend(lua_results)
+                        else:
+                            # Even without specific pattern, a G Hub Lua macro
+                            # in Downloads with gaming indicators is suspicious
+                            has_ghub_api = any(api in content for api in [
+                                "PressMouseButton", "PressAndReleaseMouseButton",
+                                "EnablePrimaryMouseButtonEvents", "OnEvent",
+                            ])
+                            if has_ghub_api:
+                                keterangan = (
+                                    f"\n═══ LUA MACRO G HUB DARI WEB ═══\n"
+                                    f"File: {item}\n"
+                                    f"Lokasi: {fpath}\n"
+                                    f"\n"
+                                    f"File ini menggunakan Logitech G Hub Lua API\n"
+                                    f"dan ditemukan di folder Downloads/Desktop.\n"
+                                    f"Kemungkinan didownload dari web untuk cheat.\n"
+                                    f"\n"
+                                    f"Cuplikan:\n{content[:300]}\n"
+                                )
+                                results.append(ScanResult(
+                                    scanner="MouseMacroScanner",
+                                    category="web_lua_macro",
+                                    name=f"Web Lua Macro: {item}",
+                                    description=f"[Web Lua] Logitech G Hub macro script dari web: {item}",
+                                    severity=75,
+                                    filepath=fpath,
+                                    evidence=keterangan,
+                                    details={"software": "Logitech G Hub (web)", "filename": item},
+                                ))
+                    except Exception:
+                        pass
+            except (PermissionError, OSError):
+                pass
 
         return results
 
