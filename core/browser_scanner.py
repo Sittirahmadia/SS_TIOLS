@@ -72,12 +72,27 @@ class BrowserScanner:
         self.db = CheatDatabase()
         self.detector = KeywordDetector()
         self.progress = progress or ScanProgress()
+        
+        # Pornography detection keywords for Chrome history
+        self.porn_keywords = {
+            "pornhub", "xvideos", "xnxx", "redtube", "porn", "xxx", "sex",
+            "adult", "nsfw", "18+", "nude", "naked", "explicit", "webcam",
+            "cam4", "xhamster", "youporn", "spankbang", "pornographic",
+            "eporner", "tube8", "xbabe", "thepornsite", "porntube",
+            "beeg", "porntrex", "vporn", "efukt"
+        }
+        self.porn_domains = [
+            "pornhub.com", "xvideos.com", "xnxx.com", "redtube.com",
+            "xhamster.com", "youporn.com", "spankbang.com", "cam4.com",
+            "eporner.com", "tube8.com", "xbabe.com", "beeg.com",
+            "porntrex.com", "vporn.com", "efukt.com"
+        ]
 
     def scan(self) -> List[ScanResult]:
         """Scan all browsers for cheat evidence."""
         results = []
         browsers_found = self._find_browsers()
-        total_steps = len(browsers_found) * 4  # history, downloads, bookmarks, extensions
+        total_steps = len(browsers_found) * 5  # history, downloads, bookmarks, extensions, pornography
         self.progress.start("Browser Scanner", max(total_steps, 1))
 
         for browser_name, profiles in browsers_found.items():
@@ -97,6 +112,11 @@ class BrowserScanner:
                 # Scan extensions
                 self.progress.update(f"{browser_name} extensions...")
                 results.extend(self._scan_extensions(browser_name, profile_path))
+                
+                # Scan for pornography in Chrome/Edge/Brave history
+                if browser_name in ("Chrome", "Edge", "Brave"):
+                    self.progress.update(f"{browser_name} adult content...")
+                    results.extend(self._scan_pornography(browser_name, profile_path))
 
         return results
 
@@ -421,6 +441,73 @@ class BrowserScanner:
                         results.extend(text_results)
             except Exception as e:
                 logger.debug(f"Firefox extensions error: {e}")
+        return results
+
+    def _scan_pornography(self, browser: str, profile: Path) -> List[ScanResult]:
+        """Scan browser history for adult/pornography content."""
+        results = []
+        history_file = self.BROWSER_PATHS.get(browser, {}).get("history", "History")
+        db_path = profile / history_file
+
+        if not db_path.exists():
+            return results
+
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tmp:
+                tmp_path = tmp.name
+            shutil.copy2(db_path, tmp_path)
+
+            conn = sqlite3.connect(tmp_path)
+            query = "SELECT url, title, last_visit_time FROM urls ORDER BY last_visit_time DESC LIMIT 5000"
+            
+            cursor = conn.execute(query)
+            for row in cursor:
+                url = (row[0] or "").lower()
+                title = (row[1] or "").lower()
+                
+                # Check for pornography domains and keywords
+                is_porn = False
+                porn_type = ""
+                
+                for domain in self.porn_domains:
+                    if domain in url:
+                        is_porn = True
+                        porn_type = domain.split(".")[0].capitalize()
+                        break
+                
+                if not is_porn:
+                    for keyword in self.porn_keywords:
+                        if keyword in url or keyword in title:
+                            is_porn = True
+                            porn_type = keyword.capitalize()
+                            break
+                
+                if is_porn:
+                    results.append(ScanResult(
+                        scanner="BrowserScanner",
+                        category="adult_content",
+                        name=f"{browser} Adult Content",
+                        description=f"[{browser}] Adult/Pornography site visited: {porn_type}",
+                        severity=40,  # Lower severity for adult content
+                        filepath=str(profile),
+                        evidence=f"URL: {url[:100]}...",
+                        details={
+                            "browser": browser,
+                            "url": url,
+                            "type": porn_type,
+                            "title": title[:100]
+                        }
+                    ))
+            
+            conn.close()
+            os.unlink(tmp_path)
+        except Exception as e:
+            logger.debug(f"Pornography scan error ({browser}): {e}")
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
+
         return results
 
     @staticmethod

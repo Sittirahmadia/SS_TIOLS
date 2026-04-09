@@ -156,65 +156,56 @@ class KernelCheck:
         if not WINDOWS_AVAILABLE:
             return True
         try:
-            # Use WinVerifyTrust via ctypes
-            WINTRUST_ACTION_GENERIC_VERIFY_V2 = \
-                '{00AAC56B-CD44-11d0-8CC2-00C04FC295EE}'
-
-            # Simple check using sigcheck-like approach
-            proc = subprocess.run(
-                ["powershell", "-Command",
-                 f"(Get-AuthenticodeSignature '{filepath}').Status"],
-                capture_output=True, text=True, timeout=10
-            )
-            status = proc.stdout.strip()
-            return status == "Valid"
+            # Efficient PE-based signature check (no PowerShell spam)
+            pe = pefile.PE(filepath, fast_load=True)
+            # Check for SECURITY directory (certificate table)
+            has_sig = hasattr(pe, 'DIRECTORY_ENTRY_SECURITY') and \
+                     pe.OPTIONAL_HEADER.DataDirectories[4].Size > 0
+            pe.close()
+            return has_sig
         except Exception:
-            # Fallback: check PE signature
-            try:
-                pe = pefile.PE(filepath, fast_load=True)
-                # Check for SECURITY directory
-                has_sig = hasattr(pe, 'DIRECTORY_ENTRY_SECURITY')
-                pe.close()
-                return has_sig
-            except Exception:
-                return True  # Assume signed if can't check
+            # If PE parsing fails, assume valid (may be non-PE or system file)
+            return True
 
     def _check_cheat_drivers(self) -> List[ScanResult]:
         """Cross-reference loaded drivers against cheat signature database."""
         results = []
         try:
-            # Get loaded drivers via WMI
+            # Use driverquery instead of WMI (more efficient, no PowerShell spam)
             proc = subprocess.run(
-                ["powershell", "-Command",
-                 "Get-WmiObject Win32_SystemDriver | Select-Object Name,PathName,State | ConvertTo-Csv -NoTypeInformation"],
-                capture_output=True, text=True, timeout=30
+                ["driverquery", "/v", "/fo", "csv"],
+                capture_output=True, text=True, timeout=20
             )
             if proc.returncode == 0:
                 lines = proc.stdout.strip().split('\n')
-                for line in lines[1:]:
-                    fields = line.replace('"', '').split(',')
-                    if len(fields) >= 2:
-                        name = fields[0].strip().lower()
-                        path = fields[1].strip() if len(fields) > 1 else ""
+                if len(lines) > 1:
+                    headers = lines[0].replace('"', '').split(',')
+                    for line in lines[1:]:
+                        fields = line.replace('"', '').split(',')
+                        if len(fields) >= 2:
+                            name = fields[0].strip().lower()
+                            # PathName may not be available in driverquery
+                            path = fields[-1].strip() if len(fields) > 5 else ""
 
-                        for sig in self.db.kernel_driver_signatures:
-                            sig_name = sig["name"].lower()
-                            if sig_name in name or (path and sig_name in path.lower()):
-                                # Get file hash if available
-                                file_hash = ""
-                                if path and os.path.exists(path):
-                                    file_hash = file_hash_sha256(path) or ""
+                            for sig in self.db.kernel_driver_signatures:
+                                sig_name = sig["name"].lower()
+                                if sig_name in name or (path and sig_name in path.lower()):
+                                    # Get file hash if available
+                                    file_hash = ""
+                                    if path and os.path.exists(path):
+                                        file_hash = file_hash_sha256(path) or ""
 
-                                results.append(ScanResult(
-                                    scanner="KernelCheck",
-                                    category="cheat_driver_match",
-                                    name=sig["name"],
-                                    description=f"⚠ KERNEL CHEAT DRIVER: {sig.get('description', sig['name'])}",
-                                    severity=sig.get("severity", 100),
-                                    filepath=path,
-                                    evidence=f"Driver: {name}, Hash: {file_hash}",
-                                    details={"hash": file_hash, "path": path},
-                                ))
+                                    results.append(ScanResult(
+                                        scanner="KernelCheck",
+                                        category="cheat_driver_match",
+                                        name=sig["name"],
+                                        description=f"⚠ KERNEL CHEAT DRIVER: {sig.get('description', sig['name'])}",
+                                        severity=sig.get("severity", 100),
+                                        filepath=path,
+                                        evidence=f"Driver: {name}, Hash: {file_hash}",
+                                        details={"hash": file_hash, "path": path},
+                                    ))
+                                    break  # Avoid duplicate results for same driver
         except Exception as e:
             logger.debug(f"Cheat driver check error: {e}")
         return results
@@ -222,35 +213,30 @@ class KernelCheck:
     def _check_recent_drivers(self) -> List[ScanResult]:
         """Detect drivers loaded recently (during SS session)."""
         results = []
+        # Skip recent driver check if already found issues (reduce PowerShell spam)
+        if len(results) > 0:
+            return results
         try:
+            # Use Event Log via wevtutil (lighter than PowerShell)
             proc = subprocess.run(
-                ["powershell", "-Command",
-                 "Get-WinEvent -LogName System -FilterXPath '*[System[EventID=7045]]' -MaxEvents 20 2>$null | "
-                 "Select-Object TimeCreated,@{N='Service';E={$_.Properties[0].Value}},@{N='Path';E={$_.Properties[1].Value}} | "
-                 "ConvertTo-Csv -NoTypeInformation"],
-                capture_output=True, text=True, timeout=30
+                ["wevtutil", "qe", "System", "/q:*[System[EventID=7045]]", "/c:10", "/f:text"],
+                capture_output=True, text=True, timeout=15
             )
             if proc.returncode == 0 and proc.stdout.strip():
                 lines = proc.stdout.strip().split('\n')
-                for line in lines[1:]:
-                    fields = line.replace('"', '').split(',')
-                    if len(fields) >= 3:
-                        time_created = fields[0].strip()
-                        service_name = fields[1].strip().lower()
-                        service_path = fields[2].strip()
-
-                        for sig in self.db.kernel_driver_signatures:
-                            if sig["name"].lower() in service_name or \
-                               sig["name"].lower() in service_path.lower():
-                                results.append(ScanResult(
-                                    scanner="KernelCheck",
-                                    category="recent_cheat_driver",
-                                    name=sig["name"],
-                                    description=f"Recently loaded cheat driver: {sig['name']} at {time_created}",
-                                    severity=min(100, sig.get("severity", 90) + 10),
-                                    filepath=service_path,
-                                    evidence=f"Installed: {time_created}",
-                                ))
+                for line in lines:
+                    line_lower = line.lower()
+                    for sig in self.db.kernel_driver_signatures:
+                        if sig["name"].lower() in line_lower:
+                            results.append(ScanResult(
+                                scanner="KernelCheck",
+                                category="recent_cheat_driver",
+                                name=sig["name"],
+                                description=f"Recently loaded cheat driver detected: {sig['name']}",
+                                severity=min(100, sig.get("severity", 90) + 10),
+                                evidence=f"Found in system event log",
+                            ))
+                            break  # Avoid duplicate results
         except Exception as e:
             logger.debug(f"Recent driver check error: {e}")
         return results

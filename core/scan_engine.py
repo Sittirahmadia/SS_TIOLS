@@ -247,6 +247,8 @@ class ScanEngine:
         max_workers = min(self._total_scanners, self.settings.max_threads)
         with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="scanner") as pool:
             future_to_task: Dict[Future, ScannerTask] = {}
+            
+            # Submit all tasks immediately
             for task in self._tasks:
                 if self.is_stopped:
                     break
@@ -258,8 +260,9 @@ class ScanEngine:
                 future = pool.submit(task.run)
                 future_to_task[future] = task
 
-            # Collect results as they complete
-            for future in as_completed(future_to_task, timeout=180):
+            # Collect results as they complete with NO global timeout
+            # Each scanner has its own timeout via task.timeout
+            for future in as_completed(future_to_task):
                 if self.is_stopped:
                     break
                 task = future_to_task[future]

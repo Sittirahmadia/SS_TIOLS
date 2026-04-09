@@ -420,8 +420,12 @@ class ModsScanner:
             for base_dir in dirs:
                 mods_dir = base_dir / "mods"
                 if mods_dir.exists():
-                    for jar in mods_dir.rglob("*.jar"):
-                        mod_files.append(str(jar))
+                    try:
+                        for jar in mods_dir.rglob("*.jar"):
+                            mod_files.append(str(jar))
+                    except Exception as e:
+                        logger.debug(f"Error scanning mods dir {mods_dir}: {e}")
+                        continue
 
         logger.info(f"Found {len(mod_files)} mod JAR files")
         return mod_files

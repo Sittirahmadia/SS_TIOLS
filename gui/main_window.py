@@ -403,6 +403,7 @@ class MainWindow(QMainWindow):
 
         # Build all tabs
         self.tabs.addTab(self._build_dashboard_tab(), self.i18n.t("dashboard"))
+        self.tabs.addTab(self._build_live_scan_tab(), "🔴 Live Scan")
         self.tabs.addTab(self._build_mods_tab(), self.i18n.t("mods_scanner"))
         self.tabs.addTab(self._build_kernel_tab(), self.i18n.t("kernel_check"))
         self.tabs.addTab(self._build_results_tab(), "All Results")
@@ -562,6 +563,76 @@ class MainWindow(QMainWindow):
         layout.addWidget(findings_group)
 
         return tab
+
+    # ── Live Scan Tab ────────────────────────────────────────────────
+    def _build_live_scan_tab(self) -> QWidget:
+        """Real-time scanner progress monitoring."""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(12)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # Title
+        title = QLabel("🔴 Live Scan Monitor")
+        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        layout.addWidget(title)
+
+        # Overall progress
+        self.live_progress_bar = QProgressBar()
+        self.live_progress_bar.setStyleSheet("QProgressBar { border-radius: 5px; } QProgressBar::chunk { background: #58a6ff; }")
+        layout.addWidget(QLabel("Overall Progress:"))
+        layout.addWidget(self.live_progress_bar)
+
+        # Scanner status
+        self.live_status_text = QTextEdit()
+        self.live_status_text.setReadOnly(True)
+        self.live_status_text.setFont(QFont("Courier New", 10))
+        self.live_status_text.setStyleSheet("background: #0d1117; color: #c9d1d9; border-radius: 5px;")
+        layout.addWidget(QLabel("Scanner Activity:"))
+        layout.addWidget(self.live_status_text)
+
+        # Real-time findings
+        self.live_findings_list = QTableWidget()
+        self.live_findings_list.setColumnCount(4)
+        self.live_findings_list.setHorizontalHeaderLabels(["Scanner", "Type", "Finding", "Severity"])
+        self.live_findings_list.horizontalHeader().setStretchLastSection(True)
+        layout.addWidget(QLabel("Real-time Findings:"))
+        layout.addWidget(self.live_findings_list)
+
+        # Bottom buttons
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        
+        pause_btn = QPushButton("⏸ Pause")
+        pause_btn.setObjectName("secondaryBtn")
+        pause_btn.setFixedWidth(100)
+        pause_btn.clicked.connect(self._pause_scan)
+        btn_layout.addWidget(pause_btn)
+        
+        export_btn = QPushButton("📊 Export Live Log")
+        export_btn.setObjectName("secondaryBtn")
+        export_btn.setFixedWidth(120)
+        export_btn.clicked.connect(self._export_live_log)
+        btn_layout.addWidget(export_btn)
+        
+        layout.addLayout(btn_layout)
+        return tab
+
+    def _pause_scan(self):
+        """Pause current scan."""
+        if hasattr(self, 'worker') and self.worker:
+            self.worker.stop()
+            self.status_label.setText("⏸ Scan paused")
+
+    def _export_live_log(self):
+        """Export live scan log."""
+        content = self.live_status_text.toPlainText()
+        if content:
+            fpath, _ = QFileDialog.getSaveFileName(self, "Export Live Scan Log", "", "Text Files (*.txt);;CSV (*.csv)")
+            if fpath:
+                with open(fpath, 'w') as f:
+                    f.write(content)
+                QMessageBox.information(self, "Export", f"Live log exported to {fpath}")
 
     # ── Mods Scanner Tab ──────────────────────────────────────────────
     def _build_mods_tab(self) -> QWidget:
@@ -914,10 +985,20 @@ class MainWindow(QMainWindow):
             if hasattr(self, 'mods_progress'):
                 self.mods_progress.setValue(pct)
                 self.mods_progress.setFormat(f"{completed}/{total}")
+            if hasattr(self, 'live_progress_bar'):
+                self.live_progress_bar.setValue(pct)
             self.progress_label.setText(f"{completed}/{total} scanners complete — ETA: {eta}")
 
     def _on_scanner_done(self, name: str, count: int, duration_str: str):
         self.status_label.setText(f"✓ {name}: {count} findings in {duration_str}")
+        if hasattr(self, 'live_status_text'):
+            current_text = self.live_status_text.toPlainText()
+            new_line = f"[✓] {name}: {count} findings in {duration_str}\n"
+            self.live_status_text.setText(current_text + new_line)
+            # Auto-scroll to bottom
+            self.live_status_text.verticalScrollBar().setValue(
+                self.live_status_text.verticalScrollBar().maximum()
+            )
 
     def _on_result(self, result_dict: dict):
         self.scan_results.append(
@@ -929,6 +1010,21 @@ class MainWindow(QMainWindow):
         self._add_finding_row(result_dict)
         self._add_all_results_row(result_dict)
         self._update_stats()
+        
+        # Add to Live Scan findings table
+        if hasattr(self, 'live_findings_list'):
+            row = self.live_findings_list.rowCount()
+            self.live_findings_list.insertRow(row)
+            self.live_findings_list.setItem(row, 0, QTableWidgetItem(result_dict.get('scanner', '')))
+            self.live_findings_list.setItem(row, 1, QTableWidgetItem(result_dict.get('category', '')))
+            self.live_findings_list.setItem(row, 2, QTableWidgetItem(result_dict.get('description', '')[:80]))
+            severity = result_dict.get('severity', 0)
+            severity_item = QTableWidgetItem(str(severity))
+            severity_item.setForeground(QColor(severity_color(severity)))
+            self.live_findings_list.setItem(row, 3, severity_item)
+            # Keep last 100 rows
+            if row > 100:
+                self.live_findings_list.removeRow(0)
 
     def _on_mod_result(self, mod_result):
         self.mod_results.append(mod_result)
