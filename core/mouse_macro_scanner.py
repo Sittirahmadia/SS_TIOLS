@@ -104,6 +104,138 @@ SUSPICIOUS_DELAY_MS = 50    # < 50ms = very likely macro
 FAST_DELAY_MS = 80          # < 80ms = suspicious for non-gaming mice
 
 
+# ── Known standalone macro tools (.exe / .jar / .ahk) ─────────────────
+# These are dedicated macro programs — the FILE ITSELF is the cheat.
+# Different from mouse software macros (where only the content matters).
+KNOWN_MACRO_TOOLS = {
+    # === Premium/Paid macro clients ===
+    "zenithmacros": {
+        "display": "ZenithMacros",
+        "desc_id": "Tool macro PvP premium (Crystal/Sword/Mace). 23+ modul, external, undetectable oleh anticheat.",
+        "desc_en": "Premium PvP macro tool (Crystal/Sword/Mace). 23+ modules, external, undetectable by anticheat.",
+        "severity": 100, "type": "macro_client", "source": "zenithmacros.store",
+        "filenames": ["zenithmacros.exe", "zenith-macros.exe", "zenithmacro.exe", "zenith_macros.exe"],
+    },
+    "198macros": {
+        "display": "198 Macros",
+        "desc_id": "Tool macro Crystal/Sword/Mace PvP. Fitur: Hit Crystal, Single/Double Anchor, Anchor Pearl, Mace Attack, W-Tap, Sprint Reset.",
+        "desc_en": "Crystal/Sword/Mace PvP macro tool. Features: Hit Crystal, Single/Double Anchor, Anchor Pearl, Mace Attack, W-Tap, Sprint Reset.",
+        "severity": 100, "type": "macro_client", "source": "198macros.com",
+        "filenames": ["198-macros.exe", "198macros.exe", "198m.exe", "198macros.jar", "198-macros.jar"],
+    },
+    "xenith": {
+        "display": "Xenith Macro",
+        "desc_id": "Tool macro PvP external (dulunya veyzyn.lol). Digunakan untuk Crystal PvP automation.",
+        "desc_en": "External PvP macro tool (formerly veyzyn.lol). Used for Crystal PvP automation.",
+        "severity": 100, "type": "macro_client", "source": "veyzyn.lol",
+        "filenames": ["xenith.exe", "xenith-macro.exe", "xenithmacro.exe", "veyzyn.exe"],
+    },
+    "twiezmacro": {
+        "display": "Twiez Macro",
+        "desc_id": "Tool macro PvP open-source dari GitHub. Digunakan untuk Minecraft PvP automation.",
+        "desc_en": "Open-source PvP macro tool from GitHub. Used for Minecraft PvP automation.",
+        "severity": 100, "type": "macro_client", "source": "github.com/twiez",
+        "filenames": ["twiez-macro.exe", "twiezmacro.exe", "twiez.exe"],
+    },
+    # === Auto-clickers ===
+    "toadclicker": {
+        "display": "ToadClicker",
+        "desc_id": "Auto-clicker khusus Minecraft (C++). Fitur: left/right autoclicker, jitter, double-click, inventory click, click recording.",
+        "desc_en": "Minecraft-specific auto-clicker (C++). Features: left/right autoclicker, jitter, double-click, inventory click, click recording.",
+        "severity": 95, "type": "autoclicker", "source": "github.com/Steve987321",
+        "filenames": ["toadclicker.exe", "toad-clicker.exe", "toad.exe"],
+    },
+    "chione": {
+        "display": "Chione",
+        "desc_id": "Auto-clicker + macro Python untuk Minecraft. Fitur: left/right click, auto-sprint, sprint reset, strafe, anti-AFK, self-destruct.",
+        "desc_en": "Python auto-clicker + macro for Minecraft. Features: left/right click, auto-sprint, sprint reset, strafe, anti-AFK, self-destruct.",
+        "severity": 95, "type": "autoclicker", "source": "github.com/LennardFe",
+        "filenames": ["chione.exe", "chione-macro.exe"],
+    },
+    "opautoclicker": {
+        "display": "OP Auto Clicker",
+        "desc_id": "Auto-clicker populer yang sering dipakai untuk Minecraft PvP. Bisa set CPS sangat tinggi.",
+        "desc_en": "Popular auto-clicker often used for Minecraft PvP. Can set very high CPS.",
+        "severity": 90, "type": "autoclicker", "source": "opautoclicker.com",
+        "filenames": ["op auto clicker.exe", "opautoclicker.exe", "op-auto-clicker.exe", "opautoclick.exe"],
+    },
+    "gsautoclicker": {
+        "display": "GS Auto Clicker",
+        "desc_id": "Auto-clicker dari Golden Software. Sering dipakai untuk Minecraft PvP dan farming.",
+        "desc_en": "Auto-clicker by Golden Software. Often used for Minecraft PvP and farming.",
+        "severity": 90, "type": "autoclicker", "source": "gs-auto-clicker.com",
+        "filenames": ["gs auto clicker.exe", "gsautoclicker.exe", "gs-auto-clicker.exe"],
+    },
+    "fastautoclicker": {
+        "display": "Fast Auto Clicker",
+        "desc_id": "Auto-clicker kecepatan tinggi. Bisa mencapai 9999+ CPS.",
+        "desc_en": "High-speed auto-clicker. Can reach 9999+ CPS.",
+        "severity": 90, "type": "autoclicker", "source": "various",
+        "filenames": ["fast auto clicker.exe", "fastautoclicker.exe", "fast-auto-clicker.exe",
+                      "speed auto clicker.exe", "speedautoclicker.exe"],
+    },
+    "murgee": {
+        "display": "Murgee Auto Clicker",
+        "desc_id": "Auto-clicker profesional dari MurGee Software. Fitur lengkap untuk click automation.",
+        "desc_en": "Professional auto-clicker by MurGee Software. Full click automation features.",
+        "severity": 85, "type": "autoclicker", "source": "murgee.net",
+        "filenames": ["murgee.exe", "auto clicker by murgee.exe", "murgee auto clicker.exe"],
+    },
+    # === Macro platforms ===
+    "keyran": {
+        "display": "Keyran",
+        "desc_id": "Platform macro gaming. Tersedia 16+ macro Minecraft termasuk AutoCrystal, Anchor, AutoPearl.",
+        "desc_en": "Gaming macro platform. 16+ Minecraft macros including AutoCrystal, Anchor, AutoPearl.",
+        "severity": 85, "type": "macro_platform", "source": "keyran.net",
+        "filenames": ["keyran.exe", "keyran setup.exe"],
+    },
+    "botmek": {
+        "display": "BotMek",
+        "desc_id": "Emulator keyboard & mouse untuk gaming. Tersedia macro Minecraft PvP (anchor, auto-build, auto-mine).",
+        "desc_en": "Keyboard & mouse emulator for gaming. Minecraft PvP macros available (anchor, auto-build, auto-mine).",
+        "severity": 85, "type": "macro_platform", "source": "botmek.com",
+        "filenames": ["botmek.exe", "botmek setup.exe"],
+    },
+    # === AHK/Script-based ===
+    "autohotkey_mc": {
+        "display": "AutoHotkey (Minecraft Script)",
+        "desc_id": "Script AutoHotkey untuk Minecraft. Bisa berisi autoclicker, crystal macro, butterfly click, dll.",
+        "desc_en": "AutoHotkey script for Minecraft. May contain autoclicker, crystal macro, butterfly click, etc.",
+        "severity": 80, "type": "ahk_script", "source": "various",
+        "filenames": [],  # Detected by .ahk content scanning, not filename
+    },
+    # === Other tools ===
+    "tinytask": {
+        "display": "TinyTask",
+        "desc_id": "Perekam & pemutar macro sederhana. Bisa merekam klik untuk Minecraft PvP.",
+        "desc_en": "Simple macro recorder & player. Can record clicks for Minecraft PvP.",
+        "severity": 80, "type": "macro_recorder", "source": "tinytask.net",
+        "filenames": ["tinytask.exe", "tiny task.exe"],
+    },
+    "jitbit": {
+        "display": "Jitbit Macro Recorder",
+        "desc_id": "Perekam macro profesional. Sering dipakai untuk record klik PvP.",
+        "desc_en": "Professional macro recorder. Often used to record PvP clicks.",
+        "severity": 80, "type": "macro_recorder", "source": "jitbit.com",
+        "filenames": ["jitbit.exe", "macro recorder.exe", "jitbit macro recorder.exe"],
+    },
+    "minecraftmacrotool": {
+        "display": "MinecraftMacroTool",
+        "desc_id": "Tool macro khusus Minecraft (Java). Bisa automate gerakan & aksi yang tidak mungkin dilakukan manusia.",
+        "desc_en": "Minecraft-specific macro tool (Java). Can automate impossible human movements & actions.",
+        "severity": 90, "type": "macro_tool", "source": "github.com/Kideneb",
+        "filenames": ["minecraftmacrotool.jar", "minecraftmacrotool.exe", "mmt.jar"],
+    },
+    "clickcrystals": {
+        "display": "ClickCrystals",
+        "desc_id": "Mod Crystal PvP dengan 80+ modul built-in. Termasuk killaura, crystal placement, auto-pearl, rendering tools. Punya scripting language sendiri (CCS).",
+        "desc_en": "Crystal PvP mod with 80+ built-in modules. Includes killaura, crystal placement, auto-pearl, rendering tools. Has own scripting language (CCS).",
+        "severity": 85, "type": "mod_macro", "source": "clickcrystals.xyz",
+        "filenames": ["clickcrystals.jar", "click-crystals.jar"],
+    },
+}
+
+
 class MouseMacroScanner:
     """
     Scans mouse software macro configurations for suspicious PvP macros.
@@ -116,35 +248,363 @@ class MouseMacroScanner:
         self.progress = progress or ScanProgress()
 
     def scan(self) -> List[ScanResult]:
-        """Scan all mouse software macro files."""
+        """Scan all mouse software macro files + standalone macro tools."""
         results = []
-        self.progress.start("Mouse Macro Scanner", 6)
+        self.progress.start("Mouse Macro Scanner", 10)
 
-        # 1. Logitech G Hub
+        # ── Phase 1: Standalone macro tools (.exe/.jar downloaded from web or installed) ──
+        self.progress.update("Scanning for standalone macro tools...")
+        results.extend(self._scan_standalone_macro_tools())
+
+        # ── Phase 2: Running macro processes ──
+        self.progress.update("Checking running macro processes...")
+        results.extend(self._scan_running_macro_processes())
+
+        # ── Phase 3: AHK scripts on disk ──
+        self.progress.update("Scanning AutoHotkey scripts...")
+        results.extend(self._scan_ahk_scripts())
+
+        # ── Phase 4: Mouse software macro content inspection ──
         self.progress.update("Scanning Logitech G Hub macros...")
         results.extend(self._scan_logitech_ghub())
 
-        # 2. Logitech Gaming Software (legacy)
         self.progress.update("Scanning Logitech Gaming Software...")
         results.extend(self._scan_logitech_lgs())
 
-        # 3. Razer Synapse
         self.progress.update("Scanning Razer Synapse macros...")
         results.extend(self._scan_razer_synapse())
 
-        # 4. Bloody / A4Tech
         self.progress.update("Scanning Bloody/A4Tech macros...")
         results.extend(self._scan_bloody())
 
-        # 5. Corsair iCUE
         self.progress.update("Scanning Corsair iCUE macros...")
         results.extend(self._scan_corsair_icue())
 
-        # 6. SteelSeries GG
         self.progress.update("Scanning SteelSeries macros...")
         results.extend(self._scan_steelseries())
 
         return results
+
+    # ── Standalone Macro Tool Detection ────────────────────────────────
+    def _scan_standalone_macro_tools(self) -> List[ScanResult]:
+        """
+        Scan common download/install locations for known macro .exe/.jar files.
+        These are standalone tools — the FILE ITSELF is the cheat.
+        """
+        results = []
+
+        # Common locations where macro tools are downloaded/installed
+        scan_dirs = []
+        home = os.environ.get("USERPROFILE", str(Path.home()))
+        for env_dir in [
+            os.path.join(home, "Downloads"),
+            os.path.join(home, "Desktop"),
+            os.path.join(home, "Documents"),
+            os.environ.get("TEMP", ""),
+            os.environ.get("TMP", ""),
+            os.path.join(os.environ.get("LOCALAPPDATA", ""), "Temp"),
+            os.path.join(home, "AppData", "Local", "Temp"),
+            os.environ.get("PROGRAMFILES", ""),
+            os.environ.get("PROGRAMFILES(X86)", ""),
+            os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs"),
+            os.path.join(home, ".minecraft"),  # Some tools placed here
+        ]:
+            if env_dir and os.path.exists(env_dir):
+                scan_dirs.append(env_dir)
+
+        # Build lookup: filename -> tool info
+        filename_lookup = {}
+        for tool_key, tool_info in KNOWN_MACRO_TOOLS.items():
+            for fname in tool_info.get("filenames", []):
+                filename_lookup[fname.lower()] = (tool_key, tool_info)
+
+        for scan_dir in scan_dirs:
+            try:
+                # Scan top level + 1 level deep (not recursive to avoid slowness)
+                items_to_check = []
+                try:
+                    for item in os.listdir(scan_dir):
+                        items_to_check.append(os.path.join(scan_dir, item))
+                        # 1 level deep
+                        subpath = os.path.join(scan_dir, item)
+                        if os.path.isdir(subpath):
+                            try:
+                                for subitem in os.listdir(subpath):
+                                    items_to_check.append(os.path.join(subpath, subitem))
+                            except (PermissionError, OSError):
+                                pass
+                except (PermissionError, OSError):
+                    continue
+
+                for fpath in items_to_check:
+                    if not os.path.isfile(fpath):
+                        continue
+                    fname = os.path.basename(fpath).lower()
+
+                    # Check exact filename match
+                    if fname in filename_lookup:
+                        tool_key, tool_info = filename_lookup[fname]
+                        results.append(self._make_tool_finding(tool_info, fpath))
+                        continue
+
+                    # Check partial match (tool name in filename)
+                    for tool_key, tool_info in KNOWN_MACRO_TOOLS.items():
+                        tool_name_lower = tool_info["display"].lower().replace(" ", "")
+                        if (tool_name_lower in fname.replace(" ", "").replace("-", "").replace("_", "")
+                                and fname.endswith(('.exe', '.jar'))):
+                            results.append(self._make_tool_finding(tool_info, fpath))
+                            break
+
+            except Exception as e:
+                logger.debug(f"Standalone scan error in {scan_dir}: {e}")
+
+        return results
+
+    def _make_tool_finding(self, tool_info: dict, filepath: str) -> ScanResult:
+        """Create a detailed finding for a standalone macro tool."""
+        display = tool_info["display"]
+        desc_id = tool_info["desc_id"]
+        desc_en = tool_info["desc_en"]
+        source = tool_info.get("source", "unknown")
+        tool_type = tool_info.get("type", "macro_tool")
+
+        # Get file info
+        try:
+            fsize = os.path.getsize(filepath)
+            from core.utils import format_size
+            size_str = format_size(fsize)
+        except Exception:
+            size_str = "unknown"
+
+        # Build detailed keterangan
+        keterangan = (
+            f"\n"
+            f"═══ MACRO TOOL TERDETEKSI ═══\n"
+            f"Nama: {display}\n"
+            f"Tipe: {tool_type}\n"
+            f"File: {os.path.basename(filepath)}\n"
+            f"Ukuran: {size_str}\n"
+            f"Lokasi: {filepath}\n"
+            f"Sumber: {source}\n"
+            f"\n"
+            f"[ID] {desc_id}\n"
+            f"[EN] {desc_en}\n"
+            f"\n"
+            f"⚠ File ini adalah tool macro yang berdiri sendiri (standalone).\n"
+            f"  Keberadaan file ini di PC sudah cukup sebagai bukti.\n"
+        )
+
+        return ScanResult(
+            scanner="MouseMacroScanner",
+            category=f"standalone_{tool_type}",
+            name=f"{display} ({os.path.basename(filepath)})",
+            description=f"[Standalone Macro] {display} ditemukan di {filepath}",
+            severity=tool_info.get("severity", 90),
+            filepath=filepath,
+            evidence=keterangan,
+            details={
+                "tool_name": display,
+                "tool_type": tool_type,
+                "source": source,
+                "desc_id": desc_id,
+                "desc_en": desc_en,
+                "file_size": size_str,
+            },
+        )
+
+    # ── Running Process Detection ─────────────────────────────────────
+    def _scan_running_macro_processes(self) -> List[ScanResult]:
+        """Check if any known macro tools are currently running."""
+        results = []
+        try:
+            import psutil
+            for proc in psutil.process_iter(['pid', 'name', 'exe']):
+                try:
+                    pname = (proc.info.get('name') or '').lower()
+                    pexe = (proc.info.get('exe') or '').lower()
+                    pid = proc.info.get('pid', 0)
+
+                    for tool_key, tool_info in KNOWN_MACRO_TOOLS.items():
+                        for fname in tool_info.get("filenames", []):
+                            fname_stem = fname.lower().replace('.exe', '').replace('.jar', '')
+                            if fname_stem in pname or (pexe and fname.lower() in pexe):
+                                display = tool_info["display"]
+                                desc_id = tool_info["desc_id"]
+
+                                keterangan = (
+                                    f"\n"
+                                    f"═══ MACRO TOOL SEDANG BERJALAN ═══\n"
+                                    f"Nama: {display}\n"
+                                    f"Proses: {proc.info.get('name', '')}\n"
+                                    f"PID: {pid}\n"
+                                    f"Path: {proc.info.get('exe', '')}\n"
+                                    f"\n"
+                                    f"[ID] {desc_id}\n"
+                                    f"\n"
+                                    f"⚠ Tool macro ini AKTIF BERJALAN saat screenshare!\n"
+                                    f"  Ini bukti kuat bahwa player menggunakan macro.\n"
+                                )
+
+                                results.append(ScanResult(
+                                    scanner="MouseMacroScanner",
+                                    category="running_macro_process",
+                                    name=f"{display} (RUNNING - PID:{pid})",
+                                    description=f"[RUNNING] {display} sedang berjalan (PID: {pid})",
+                                    severity=min(tool_info.get("severity", 95) + 5, 100),
+                                    filepath=proc.info.get('exe', ''),
+                                    evidence=keterangan,
+                                    details={
+                                        "tool_name": display,
+                                        "pid": pid,
+                                        "process_name": proc.info.get('name', ''),
+                                        "desc_id": desc_id,
+                                    },
+                                ))
+                                break
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.debug(f"Running process scan error: {e}")
+        return results
+
+    # ── AHK Script Detection ──────────────────────────────────────────
+    def _scan_ahk_scripts(self) -> List[ScanResult]:
+        """Scan for AutoHotkey .ahk scripts related to Minecraft."""
+        results = []
+        home = os.environ.get("USERPROFILE", str(Path.home()))
+        search_dirs = [
+            os.path.join(home, "Downloads"),
+            os.path.join(home, "Desktop"),
+            os.path.join(home, "Documents"),
+            os.path.join(home, "Documents", "AutoHotkey"),
+            os.path.join(home, "Documents", "AHK"),
+            os.environ.get("TEMP", ""),
+        ]
+
+        # Keywords that indicate Minecraft PvP macro in AHK content
+        mc_ahk_indicators = [
+            "minecraft", "mc_macro", "pvp", "crystal", "anchor",
+            "autoclicker", "auto_click", "butterfly", "jitter",
+            "wtap", "w_tap", "sprint_reset", "combo",
+            "Send {LButton", "Send {RButton", "Click",
+            "DllCall.*mouse_event",  # Direct mouse input
+            "SetKeyDelay", "SetMouseDelay",
+        ]
+
+        for search_dir in search_dirs:
+            if not search_dir or not os.path.exists(search_dir):
+                continue
+            try:
+                for item in os.listdir(search_dir):
+                    if not item.lower().endswith('.ahk'):
+                        continue
+                    fpath = os.path.join(search_dir, item)
+                    if not os.path.isfile(fpath):
+                        continue
+
+                    try:
+                        content = safe_read_file(fpath)
+                        if not content:
+                            continue
+                        content_lower = content.lower()
+
+                        # Check if this AHK script is Minecraft-related
+                        mc_related = any(ind.lower() in content_lower for ind in mc_ahk_indicators)
+                        if not mc_related:
+                            continue  # Skip non-Minecraft AHK scripts (NO false flag)
+
+                        # Analyze the AHK script content
+                        findings = []
+
+                        # Detect autoclicker pattern
+                        if re.search(r'(Send\s*\{[LR]Button|Click|mouse_event)', content, re.IGNORECASE):
+                            if re.search(r'(Loop|While|Sleep\s*\d)', content, re.IGNORECASE):
+                                delay_match = re.search(r'Sleep[,\s]+?(\d+)', content)
+                                delay = int(delay_match.group(1)) if delay_match else 0
+                                cps = round(1000 / max(delay, 1)) if delay > 0 else 0
+                                findings.append(('autoclicker', delay, cps))
+
+                        # Detect crystal/anchor macro
+                        if any(k in content_lower for k in ['crystal', 'obsidian', 'anchor', 'glowstone', 'endcrystal']):
+                            findings.append(('crystal_pvp', 0, 0))
+
+                        # Detect butterfly/jitter
+                        if any(k in content_lower for k in ['butterfly', 'jitter', 'drag_click', 'double_click']):
+                            findings.append(('butterfly', 0, 0))
+
+                        # Detect W-tap
+                        if any(k in content_lower for k in ['wtap', 'w_tap', 'sprint_reset', 'combo_tap']):
+                            findings.append(('wtap', 0, 0))
+
+                        for finding_type, delay, cps in findings:
+                            keterangan = self._build_ahk_keterangan(
+                                item, fpath, finding_type, delay, cps, content[:500]
+                            )
+                            sev = 95 if finding_type == 'autoclicker' and delay < 50 else 85
+
+                            results.append(ScanResult(
+                                scanner="MouseMacroScanner",
+                                category=f"ahk_{finding_type}",
+                                name=f"AHK Script: {item} ({finding_type})",
+                                description=f"[AutoHotkey] Minecraft {finding_type} script: {item}",
+                                severity=sev,
+                                filepath=fpath,
+                                evidence=keterangan,
+                                details={
+                                    "script_name": item,
+                                    "finding_type": finding_type,
+                                    "delay_ms": delay,
+                                    "estimated_cps": cps,
+                                },
+                            ))
+
+                    except Exception:
+                        pass
+            except (PermissionError, OSError):
+                pass
+
+        return results
+
+    def _build_ahk_keterangan(self, filename: str, filepath: str,
+                               finding_type: str, delay: int, cps: int,
+                               snippet: str) -> str:
+        """Build detailed keterangan for AHK script finding."""
+        type_names = {
+            'autoclicker': 'Auto-Clicker',
+            'crystal_pvp': 'Crystal PvP Macro',
+            'butterfly': 'Butterfly Click',
+            'wtap': 'W-Tap Combo Macro',
+        }
+        type_descs_id = {
+            'autoclicker': 'Script yang mengklik otomatis dengan kecepatan tinggi.',
+            'crystal_pvp': 'Script yang mengotomasi penempatan & peledakan crystal/anchor.',
+            'butterfly': 'Script yang mensimulasi butterfly click untuk CPS tinggi.',
+            'wtap': 'Script yang mengotomasi W-Tap untuk combo PvP.',
+        }
+
+        keterangan = (
+            f"\n"
+            f"═══ AHK SCRIPT TERDETEKSI ═══\n"
+            f"File: {filename}\n"
+            f"Lokasi: {filepath}\n"
+            f"Tipe: {type_names.get(finding_type, finding_type)}\n"
+        )
+        if delay > 0:
+            keterangan += f"Delay: {delay}ms\n"
+        if cps > 0:
+            keterangan += f"Estimasi CPS: ~{cps} clicks/second\n"
+        if cps > 20:
+            keterangan += f"⚠ CPS {cps} JAUH MELEBIHI kemampuan manusia (max ~20 CPS)\n"
+        keterangan += (
+            f"\n"
+            f"Deskripsi: {type_descs_id.get(finding_type, '')}\n"
+            f"\n"
+            f"Cuplikan script:\n"
+            f"{snippet[:300]}\n"
+        )
+        return keterangan
 
     # ── Logitech G Hub ────────────────────────────────────────────────
     def _scan_logitech_ghub(self) -> List[ScanResult]:
@@ -529,6 +989,22 @@ class MouseMacroScanner:
                         break
 
             if matched:
+                # Build detailed keterangan
+                keterangan = (
+                    f"\n"
+                    f"═══ MACRO CONTENT TERDETEKSI ═══\n"
+                    f"Software: {software}\n"
+                    f"Pattern: {pattern_name}\n"
+                    f"Deskripsi: {pattern_info['description']}\n"
+                    f"File: {os.path.basename(filepath)}\n"
+                    f"\n"
+                    f"Bukti yang ditemukan:\n"
+                    f"  {match_evidence[:300]}\n"
+                    f"\n"
+                    f"⚠ Ini menunjukkan macro yang secara spesifik dibuat untuk\n"
+                    f"  keuntungan PvP di Minecraft (bukan konfigurasi normal).\n"
+                )
+
                 results.append(ScanResult(
                     scanner="MouseMacroScanner",
                     category=f"macro_{pattern_name}",
@@ -536,7 +1012,7 @@ class MouseMacroScanner:
                     description=f"[{software}] {pattern_info['description']}",
                     severity=pattern_info["severity"],
                     filepath=filepath,
-                    evidence=match_evidence[:300],
+                    evidence=keterangan,
                     details={"software": software, "pattern": pattern_name},
                 ))
 
@@ -576,28 +1052,62 @@ class MouseMacroScanner:
             inhuman_count = len([d for d in delays if d < SUSPICIOUS_DELAY_MS])
 
             if min_delay < INHUMAN_DELAY_MS and inhuman_count >= 3:
+                est_cps = round(1000 / max(avg_delay, 1))
+                keterangan = (
+                    f"\n"
+                    f"═══ KECEPATAN KLIK TIDAK MANUSIAWI ═══\n"
+                    f"Software: {software}\n"
+                    f"File: {os.path.basename(filepath)}\n"
+                    f"\n"
+                    f"Analisis Delay:\n"
+                    f"  Delay minimum: {min_delay}ms\n"
+                    f"  Delay rata-rata: {avg_delay:.0f}ms\n"
+                    f"  Total aksi: {len(delays)}\n"
+                    f"  Aksi < {SUSPICIOUS_DELAY_MS}ms: {inhuman_count}\n"
+                    f"\n"
+                    f"Estimasi CPS: ~{est_cps} clicks/second\n"
+                    f"\n"
+                    f"⚠ Kecepatan klik manusia normal: 6-14 CPS\n"
+                    f"  Butterfly click: 15-20 CPS\n"
+                    f"  Delay {min_delay}ms = ~{round(1000/max(min_delay,1))} CPS → PASTI MACRO\n"
+                    f"\n"
+                    f"  Delay di bawah 30ms TIDAK MUNGKIN dilakukan manusia.\n"
+                    f"  Ini bukti kuat penggunaan autoclicker/macro.\n"
+                )
                 results.append(ScanResult(
                     scanner="MouseMacroScanner",
                     category="inhuman_timing",
                     name="Inhuman Click Speed",
-                    description=f"[{software}] Inhuman click timing detected: min {min_delay}ms, avg {avg_delay:.0f}ms ({inhuman_count} actions < {SUSPICIOUS_DELAY_MS}ms)",
+                    description=f"[{software}] Kecepatan klik tidak manusiawi: {min_delay}ms (~{est_cps} CPS)",
                     severity=95,
                     filepath=filepath,
-                    evidence=f"Delays: min={min_delay}ms, avg={avg_delay:.0f}ms, count={len(delays)}, inhuman={inhuman_count}",
+                    evidence=keterangan,
                     details={"software": software, "min_delay": min_delay,
-                             "avg_delay": round(avg_delay), "inhuman_count": inhuman_count},
+                             "avg_delay": round(avg_delay), "inhuman_count": inhuman_count,
+                             "estimated_cps": est_cps},
                 ))
             elif min_delay < SUSPICIOUS_DELAY_MS and inhuman_count >= 2:
+                est_cps = round(1000 / max(avg_delay, 1))
+                keterangan = (
+                    f"\n"
+                    f"═══ KECEPATAN KLIK MENCURIGAKAN ═══\n"
+                    f"Software: {software}\n"
+                    f"  Delay minimum: {min_delay}ms (~{round(1000/max(min_delay,1))} CPS)\n"
+                    f"  Delay rata-rata: {avg_delay:.0f}ms (~{est_cps} CPS)\n"
+                    f"  Aksi cepat: {inhuman_count}\n"
+                    f"\n"
+                    f"  Perlu investigasi lebih lanjut.\n"
+                )
                 results.append(ScanResult(
                     scanner="MouseMacroScanner",
                     category="suspicious_timing",
                     name="Suspicious Click Speed",
-                    description=f"[{software}] Suspicious click timing: min {min_delay}ms, avg {avg_delay:.0f}ms",
+                    description=f"[{software}] Kecepatan klik mencurigakan: {min_delay}ms (~{est_cps} CPS)",
                     severity=75,
                     filepath=filepath,
-                    evidence=f"Delays: min={min_delay}ms, avg={avg_delay:.0f}ms",
+                    evidence=keterangan,
                     details={"software": software, "min_delay": min_delay,
-                             "avg_delay": round(avg_delay)},
+                             "avg_delay": round(avg_delay), "estimated_cps": est_cps},
                 ))
 
         return results
