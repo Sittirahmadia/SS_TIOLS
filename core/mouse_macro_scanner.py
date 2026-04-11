@@ -336,6 +336,12 @@ class MouseMacroScanner:
         self.progress.update("Scanning SteelSeries macros...")
         results.extend(self._scan_steelseries())
 
+        # ── Phase 5: Deep binary scan of mouse software install dirs ──
+        self.progress.update("Deep binary scan of mouse software...")
+        for sw in self.get_installed_software():
+            if sw.get("installed") and sw.get("path"):
+                results.extend(self._scan_binary_files(sw["path"], sw["name"]))
+
         return results
 
     # ── Standalone Macro Tool Detection ────────────────────────────────
@@ -1384,3 +1390,70 @@ class MouseMacroScanner:
                     break
 
         return software
+
+    def _scan_binary_files(self, install_path: str, software_name: str) -> List[ScanResult]:
+        """Deep binary scan of mouse software .exe and .dll files for embedded cheat strings.
+        This scans the actual binaries of mouse software for hidden macro/autoclicker code
+        that wouldn't appear in config files.
+        """
+        results = []
+        if not os.path.isdir(install_path):
+            return results
+
+        cheat_binary_strings = [
+            (b"autoclicker", 90, "AutoClicker code embedded in binary"),
+            (b"auto_click", 90, "Auto-click function in binary"),
+            (b"mouse_replay", 80, "Mouse replay/record function"),
+            (b"rapid_fire", 95, "Rapid fire macro in binary"),
+            (b"jitter_click", 85, "Jitter click simulation"),
+            (b"butterfly_click", 85, "Butterfly click macro"),
+            (b"drag_click", 80, "Drag click macro"),
+            (b"minecraft", 40, "Minecraft-specific targeting"),
+            (b"killaura", 100, "KillAura cheat reference"),
+            (b"aimassist", 95, "Aim assist reference"),
+            (b"triggerbot", 95, "Triggerbot reference"),
+        ]
+
+        try:
+            for root, dirs, files in os.walk(install_path):
+                # Limit depth to 3
+                depth = root[len(install_path):].count(os.sep)
+                if depth > 3:
+                    continue
+                for fname in files:
+                    ext = os.path.splitext(fname)[1].lower()
+                    if ext not in ('.exe', '.dll'):
+                        continue
+                    fpath = os.path.join(root, fname)
+                    try:
+                        fsize = os.path.getsize(fpath)
+                        if fsize > 50 * 1024 * 1024:  # Skip >50MB
+                            continue
+                        with open(fpath, 'rb') as f:
+                            data = f.read()
+                        data_lower = data.lower()
+                        for pattern, severity, desc in cheat_binary_strings:
+                            if pattern in data_lower:
+                                # Skip low-severity matches for known safe software
+                                if severity < 80 and software_name in (
+                                    "Logitech G Hub", "Razer Synapse", "Corsair iCUE",
+                                    "SteelSeries GG"
+                                ):
+                                    continue
+                                results.append(ScanResult(
+                                    scanner="MouseMacroScanner",
+                                    category="binary_cheat_string",
+                                    name=f"{software_name}: {fname}",
+                                    description=f"Suspicious string in {software_name} binary: {desc}",
+                                    severity=severity,
+                                    filepath=fpath,
+                                    evidence=f"Pattern: {pattern.decode('ascii', errors='replace')} in {fname}",
+                                    details={"software": software_name},
+                                ))
+                                break  # One finding per file
+                    except (PermissionError, OSError):
+                        pass
+        except Exception as e:
+            logger.debug(f"Binary scan error for {software_name}: {e}")
+
+        return results

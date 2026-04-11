@@ -88,37 +88,7 @@ class BrowserScanner:
             "porntrex.com", "vporn.com", "efukt.com"
         ]
 
-    def scan(self) -> List[ScanResult]:
-        """Scan all browsers for cheat evidence."""
-        results = []
-        browsers_found = self._find_browsers()
-        total_steps = len(browsers_found) * 5  # history, downloads, bookmarks, extensions, pornography
-        self.progress.start("Browser Scanner", max(total_steps, 1))
-
-        for browser_name, profiles in browsers_found.items():
-            for profile_path in profiles:
-                # Scan history
-                self.progress.update(f"{browser_name} history...")
-                results.extend(self._scan_history(browser_name, profile_path))
-
-                # Scan downloads
-                self.progress.update(f"{browser_name} downloads...")
-                results.extend(self._scan_downloads(browser_name, profile_path))
-
-                # Scan bookmarks
-                self.progress.update(f"{browser_name} bookmarks...")
-                results.extend(self._scan_bookmarks(browser_name, profile_path))
-
-                # Scan extensions
-                self.progress.update(f"{browser_name} extensions...")
-                results.extend(self._scan_extensions(browser_name, profile_path))
-                
-                # Scan for pornography in Chrome/Edge/Brave history
-                if browser_name in ("Chrome", "Edge", "Brave"):
-                    self.progress.update(f"{browser_name} adult content...")
-                    results.extend(self._scan_pornography(browser_name, profile_path))
-
-        return results
+    # NOTE: scan() method is defined below _scan_cache() with enhanced cache scanning
 
     def _find_browsers(self) -> Dict[str, List[Path]]:
         """Find installed browsers and their profile directories."""
@@ -507,6 +477,102 @@ class BrowserScanner:
                 os.unlink(tmp_path)
             except:
                 pass
+
+        return results
+
+    def _scan_cache(self, browser: str, profile: Path) -> List[ScanResult]:
+        """Scan browser cache for cheat-related downloaded content.
+        Inspects cache index and data files for cheat website URLs.
+        """
+        results = []
+        cache_dirs = [
+            profile / "Cache" / "Cache_Data",
+            profile / "Cache",
+            profile / "cache2" / "entries",  # Firefox
+        ]
+
+        cheat_cache_patterns = [
+            "wurst", "impact client", "meteor client", "aristois",
+            "killaura", "autoclicker", "macro.exe", "198macros",
+            "zenithmacro", "hack client", "ghost client", "vape",
+            "xray", "cheat download", ".jar cheat",
+        ]
+
+        for cache_dir in cache_dirs:
+            if not cache_dir.exists():
+                continue
+            try:
+                # Scan cache index files for URLs
+                for cache_file in list(cache_dir.iterdir())[:200]:  # Limit files
+                    if not cache_file.is_file():
+                        continue
+                    try:
+                        if cache_file.stat().st_size > 2 * 1024 * 1024:
+                            continue
+                        with open(cache_file, 'rb') as f:
+                            data = f.read(8192)  # Read header portion
+                        # Try to extract URL strings from cache entries
+                        text = data.decode('ascii', errors='ignore').lower()
+                        for pattern in cheat_cache_patterns:
+                            if pattern in text:
+                                # Extract URL context
+                                idx = text.find(pattern)
+                                start = max(0, idx - 100)
+                                end = min(len(text), idx + 100)
+                                context = text[start:end].strip()
+                                results.append(ScanResult(
+                                    scanner="BrowserScanner",
+                                    category="cache_cheat_reference",
+                                    name=f"Cache: {pattern}",
+                                    description=f"[{browser} Cache] Cheat-related content in browser cache: {pattern}",
+                                    severity=75,
+                                    filepath=str(cache_file),
+                                    evidence=context[:300],
+                                    details={"browser": browser, "pattern": pattern},
+                                ))
+                                break
+                    except (PermissionError, OSError):
+                        pass
+            except PermissionError:
+                pass
+            except Exception as e:
+                logger.debug(f"Cache scan error ({browser}): {e}")
+
+        return results
+
+    def scan(self) -> List[ScanResult]:
+        """Scan all browsers for cheat evidence."""
+        results = []
+        browsers_found = self._find_browsers()
+        total_steps = len(browsers_found) * 6  # history, downloads, bookmarks, extensions, pornography, cache
+        self.progress.start("Browser Scanner", max(total_steps, 1))
+
+        for browser_name, profiles in browsers_found.items():
+            for profile_path in profiles:
+                # Scan history
+                self.progress.update(f"{browser_name} history...")
+                results.extend(self._scan_history(browser_name, profile_path))
+
+                # Scan downloads
+                self.progress.update(f"{browser_name} downloads...")
+                results.extend(self._scan_downloads(browser_name, profile_path))
+
+                # Scan bookmarks
+                self.progress.update(f"{browser_name} bookmarks...")
+                results.extend(self._scan_bookmarks(browser_name, profile_path))
+
+                # Scan extensions
+                self.progress.update(f"{browser_name} extensions...")
+                results.extend(self._scan_extensions(browser_name, profile_path))
+
+                # Scan for pornography in Chrome/Edge/Brave history
+                if browser_name in ("Chrome", "Edge", "Brave"):
+                    self.progress.update(f"{browser_name} adult content...")
+                    results.extend(self._scan_pornography(browser_name, profile_path))
+
+                # Scan cache for cheat content
+                self.progress.update(f"{browser_name} cache...")
+                results.extend(self._scan_cache(browser_name, profile_path))
 
         return results
 
