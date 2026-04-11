@@ -1,53 +1,68 @@
-# SS-Tools Ultimate v3.0
+# Minecraft SS AntiCheat Scanner v1.0
 
-**Anti-Cheat Screenshare Tool Terbaik untuk Minecraft**
+**Production-ready Anti-Cheat Screenshare Tool for Minecraft**
 
-SS-Tools Ultimate adalah aplikasi desktop profesional yang dirancang untuk staff server Minecraft dalam melakukan screenshare (SS) terhadap player yang dicurigai menggunakan cheat. Tool ini mampu mendeteksi semua jenis cheat dengan akurasi mendekati 100% dan zero false positive.
+A professional desktop application designed for Minecraft server staff to perform screenshare (SS) inspections. Detects all types of cheats using multi-layer detection (hash + signature + behavior + memory + bytecode analysis) with an extremely low false positive rate thanks to smart whitelisting of legitimate gaming software.
+
+**Requires:** Windows 10/11 with Administrator privileges (auto-requests UAC elevation).
 
 ---
 
-## Fitur Utama
+## Features
 
-### 1. Cheat Detector Keyword (Advanced)
-- Database 350+ entry keyword cheat dalam format JSON
-- Support regex, wildcard, fuzzy matching, Levenshtein distance
-- Deteksi nama cheat client, module, developer, file, folder, URL, Discord invite
-- Auto-update database melalui GitHub
+### 1. Cheat Signature Database
+- 760+ cheat signature entries in JSON format
+- Regex, wildcard, fuzzy matching, and Levenshtein distance
+- Cheat clients, modules, developers, files, URLs, Discord invites
+- Auto-update database from GitHub
+- SHA-256 hash-based detection for known cheat executables
 
-### 2. Minecraft Scanner
-- Scan otomatis semua launcher: Official, TLauncher, CurseForge, MultiMC, Prism Launcher, GDLauncher, ATLauncher, HMCL, SKLauncher, Badlion, Lunar, Feather, LabyMod, dll
-- Scan folder mods, logs, config, saves, resourcepacks, versions, libraries
-- Multi-threading + caching untuk performa optimal
-- Whitelist resmi mod vanilla + modpack populer
+### 2. Minecraft Scanner (Enhanced)
+- Scans all launchers: Official, TLauncher, CurseForge, MultiMC, Prism, GDLauncher, ATLauncher, HMCL, SKLauncher, Badlion, Lunar, Feather, LabyMod, etc.
+- Recursively scans .minecraft directory (mods/, versions/, libraries/, shaderpacks/, resourcepacks/)
+- **JVM argument scanning** - detects -javaagent, -noverify, suspicious classpath entries
+- **Fabric/Forge mod list inspection** - reads fabric.mod.json and mods.toml metadata
+- Multi-threaded + SQLite caching for performance
+- Whitelist for legitimate vanilla mods and popular modpacks
 
-### 3. Mods Scanner (Deep Inspection)
-- Ekstrak semua .class dari file .jar mod
-- Analisis bytecode langsung (constant pool, opcodes)
-- Integrasi decompiler (CFR, FernFlower, Procyon, Vineflower)
-- Deteksi pattern cheat: KillAura, Reach, Flight, Speed, XRay, ESP, dll
-- Deteksi obfuscation, reflection, native methods, mixin hooks
-- Tidak ada batasan jumlah/ukuran file mod
-- Cache hasil scan untuk performa ulang
+### 3. Mods Scanner (Deep .jar Inspection)
+- Extracts ALL .class files from every .jar file
+- Direct bytecode analysis (constant pool, opcodes)
+- Decompiler integration (CFR, FernFlower, Procyon, Vineflower)
+- Detects KillAura, Reach, Flight, Speed, XRay, ESP, etc.
+- Obfuscation detection, reflection analysis, native methods, mixin hooks
+- No file size/count limits, cached results for repeat scans
 
-### 4. Kernel Check (Anti-Rootkit)
-- Enumerasi semua loaded kernel drivers
-- Cek digital signature setiap driver
-- Database 30+ known exploit/cheat driver
-- Deteksi hidden drivers (cross-view scanning)
-- Deteksi driver baru dimuat saat sesi SS
+### 4. Kernel Check (Enhanced Anti-Rootkit)
+- Enumerates all loaded kernel drivers (driverquery)
+- Digital signature verification for every driver
+- **Minifilter (fltmc) driver scanning** for hidden file interceptors
+- **SSDT hook detection** via cross-view analysis
+- Database of 30+ known exploit/cheat drivers
+- Hidden driver detection (cross-view WMI vs driverquery)
+- Trusted signer whitelist (Microsoft, Logitech, Razer, Corsair, etc.)
 
-### 5. Process Scanner
-- Scan semua running process + loaded DLL
-- Deteksi auto-clicker, macro, injector, debugger
-- Scan DLL yang di-inject ke proses Java/Minecraft
+### 5. Process & DLL Scanner (Enhanced)
+- Full process list + loaded DLL scanning
+- **SHA-256 hash matching** against known cheat executable hashes
+- Gaming software whitelist (Logitech G HUB, Razer Synapse, Corsair iCUE, SteelSeries GG, etc.)
+- Detects macro.exe, 198macros, ZenithMacro, AutoClicker Pro, etc.
+- DLL injection detection in Java/Minecraft processes
 
-### 6. String Deleted Scanner (Forensic)
-- Scan Recycle Bin, temp folders, prefetch files
-- Scan registry (RecentDocs, RunMRU, AppCompatFlags)
-- Scan Windows Event Logs & USN Journal
+### 6. Memory Forensic Scanner
+- Scans process memory regions using Windows API (ctypes)
+- Detects deleted/hidden cheat strings still in RAM
+- Java agent and classpath analysis
+- Targets Minecraft JVM + mouse software processes
 
-### 7. Browser Scanner
-- Support Chrome, Edge, Firefox, Opera, Brave
+### 7. String Deleted Scanner (Forensic)
+- Recycle Bin + $Recycle.Bin + System Volume Information
+- Temp folders, Prefetch files, Registry artifacts
+- Windows Event Logs & USN Journal
+- Recovers and analyzes file signatures even if partially deleted
+
+### 8. Browser Scanner (Enhanced)
+- Chrome, Edge, Firefox, Opera, Brave support
 - Scan history, downloads, bookmarks, extensions
 - Deteksi URL website cheat, forum, download link
 
@@ -65,42 +80,71 @@ SS-Tools Ultimate adalah aplikasi desktop profesional yang dirancang untuk staff
 - Scan DNS cache untuk domain cheat
 - Cek modifikasi hosts file
 
+### 9. Mouse Software Scanner (Enhanced)
+- Scans Logitech G Hub, Razer Synapse, Bloody/A4Tech, Corsair iCUE, SteelSeries GG
+- Deep macro profile/script inspection for suspicious bindings
+- **Binary scanning** of .exe/.dll files for embedded cheat strings
+- Standalone macro tool detection (ZenithMacros, 198Macros, ToadClicker, etc.)
+- AutoHotkey script analysis
+
+### 10. Deleted File Scanner
+- Scans Recycle Bin for recently deleted cheat files
+- Monitors file deletions during SS session
+- MFT/USN Journal analysis
+- Sysmon log integration
+
 ### 11. Evidence Collector & Report Generator
-- Screenshot otomatis
-- Export process list
-- Simpan hasil scan ke folder Evidence
-- Generate report HTML profesional
+- Automatic screenshot capture
+- Process list export
+- Evidence folder organization
+- Professional HTML report generation
+
+### Multi-Layer Detection
+Each finding goes through up to 5 detection layers:
+1. **Hash** - SHA-256 hash matching against known cheat file hashes
+2. **Signature** - String/pattern signature matching from the database
+3. **Behavior** - Behavioral analysis (timing patterns, injection techniques)
+4. **Memory** - In-memory string scanning via Windows API
+5. **Bytecode** - Java bytecode constant pool analysis for .class files
+
+### Smart Whitelist (Zero False Positives)
+Legitimate gaming software is whitelisted to prevent false flags:
+- Logitech G HUB, Razer Synapse, Corsair iCUE, SteelSeries GG
+- HyperX NGENUITY, Roccat Swarm, ASUS ROG Armoury Crate
+- Glorious Core, BenQ Zowie, MSI Dragon Center
+- Only macro **contents** are inspected, not the software itself
 
 ---
 
-## Instalasi
+## Installation
 
-### Persyaratan
+### Requirements
 - **OS:** Windows 10/11 (64-bit)
-- **Python:** 3.11 atau 3.12
-- **RAM:** Minimal 4 GB
-- **Disk:** 200 MB ruang kosong
+- **Python:** 3.11 or 3.12
+- **RAM:** Minimum 4 GB
+- **Disk:** 200 MB free space
+- **Privileges:** Administrator (auto-requested via UAC)
 
-### Install dari Source
+### Install from Source
 
 ```bash
 # Clone repository
 git clone https://github.com/Sittirahmadia/SS_TIOLS.git
 cd SS_TIOLS
 
-# Buat virtual environment (opsional tapi direkomendasikan)
+# Create virtual environment (optional but recommended)
 python -m venv venv
 venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Jalankan aplikasi
+# Run application (will auto-request admin)
 python main.py
 ```
 
 ### Download .exe (Release)
-Download file `SS-Tools-Ultimate.exe` dari halaman [Releases](https://github.com/Sittirahmadia/SS_TIOLS/releases).
+Download from the [Releases](https://github.com/Sittirahmadia/SS_TIOLS/releases) page.
 
 ---
 

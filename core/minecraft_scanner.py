@@ -89,25 +89,7 @@ class MinecraftScanner:
                 logger.info(f"Found {launcher}: {[str(d) for d in launcher_dirs]}")
         return found
 
-    def scan_all(self) -> List[ScanResult]:
-        """Full scan of all Minecraft installations."""
-        all_results = []
-        installations = self.find_installations()
-
-        if not installations:
-            logger.info("No Minecraft installations found")
-            return all_results
-
-        total_dirs = sum(len(dirs) for dirs in installations.values())
-        self.progress.start("Minecraft Scanner", total_dirs * len(MINECRAFT_SCAN_DIRS))
-
-        for launcher, dirs in installations.items():
-            for base_dir in dirs:
-                results = self._scan_installation(base_dir, launcher)
-                all_results.extend(results)
-
-        logger.info(f"Minecraft scan complete: {len(all_results)} findings")
-        return all_results
+    # NOTE: scan_all is defined below _scan_fabric_forge_modlist with enhanced logic
 
     def _scan_installation(self, base_dir: Path, launcher: str) -> List[ScanResult]:
         """Scan a single Minecraft installation directory."""
@@ -242,6 +224,184 @@ class MinecraftScanner:
                 logger.debug(f"Error scanning logs: {e}")
 
         return results
+
+    def _scan_jvm_arguments(self) -> List[ScanResult]:
+        """Scan JVM arguments of running Minecraft/Java processes for cheat indicators."""
+        results = []
+        try:
+            import psutil
+        except ImportError:
+            return results
+
+        suspicious_jvm_args = [
+            ("-javaagent:", 85, "Java agent injection (potential cheat loader)"),
+            ("-noverify", 80, "Bytecode verification disabled (cheat injection technique)"),
+            ("-Xbootclasspath", 75, "Boot classpath override (potential class replacement)"),
+            ("--add-opens=java.base", 40, "Java module access override"),
+            ("-XX:+DisableAttachMechanism", 60, "Attach mechanism disabled (anti-debug)"),
+        ]
+
+        cheat_classpath_keywords = [
+            "hack", "cheat", "inject", "exploit", "wurst", "impact",
+            "meteor", "vape", "autoclicker", "killaura", "xray",
+            "noclip", "speedhack", "aimbot", "ghost", "reach",
+        ]
+
+        try:
+            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                name = (proc.info.get('name') or '').lower()
+                if name not in ('java.exe', 'javaw.exe', 'java', 'javaw'):
+                    continue
+                cmdline = proc.info.get('cmdline') or []
+                cmd_str = " ".join(cmdline)
+                cmd_lower = cmd_str.lower()
+
+                # Check suspicious JVM flags
+                for flag, severity, desc in suspicious_jvm_args:
+                    if flag.lower() in cmd_lower:
+                        results.append(ScanResult(
+                            scanner="MinecraftScanner",
+                            category="suspicious_jvm_arg",
+                            name=f"JVM Flag: {flag}",
+                            description=desc,
+                            severity=severity,
+                            filepath=f"PID:{proc.info['pid']}",
+                            evidence=cmd_str[:500],
+                            details={"pid": proc.info['pid'], "flag": flag},
+                        ))
+
+                # Check classpath for cheat references
+                for kw in cheat_classpath_keywords:
+                    if kw in cmd_lower:
+                        # Avoid false positives from our own scanner
+                        context = self._extract_cmdline_context(cmd_str, kw)
+                        if context and "ss-tools" not in context.lower():
+                            results.append(ScanResult(
+                                scanner="MinecraftScanner",
+                                category="suspicious_classpath",
+                                name=f"Classpath keyword: {kw}",
+                                description=f"Cheat-related keyword in JVM classpath: {kw}",
+                                severity=90,
+                                filepath=f"PID:{proc.info['pid']}",
+                                evidence=context[:300],
+                                details={"pid": proc.info['pid']},
+                            ))
+                            break
+
+        except Exception as e:
+            logger.debug(f"JVM argument scan error: {e}")
+
+        return results
+
+    def _extract_cmdline_context(self, cmd: str, keyword: str) -> str:
+        """Extract context around a keyword in command line."""
+        idx = cmd.lower().find(keyword.lower())
+        if idx < 0:
+            return ""
+        start = max(0, idx - 50)
+        end = min(len(cmd), idx + len(keyword) + 50)
+        return cmd[start:end]
+
+    def _scan_fabric_forge_modlist(self, base_dir: Path, launcher: str) -> List[ScanResult]:
+        """Inspect Fabric/Forge mod lists and configs for suspicious entries."""
+        results = []
+
+        # Check fabric.mod.json and mods.toml inside mod JARs for suspicious metadata
+        mods_dir = base_dir / "mods"
+        if not mods_dir.exists():
+            return results
+
+        import zipfile
+        for jar_path in mods_dir.glob("*.jar"):
+            try:
+                with zipfile.ZipFile(str(jar_path), 'r') as zf:
+                    # Fabric mod metadata
+                    if "fabric.mod.json" in zf.namelist():
+                        try:
+                            mod_meta = json.loads(zf.read("fabric.mod.json").decode('utf-8', errors='replace'))
+                            mod_id = mod_meta.get("id", "")
+                            mod_name = mod_meta.get("name", "")
+                            mod_desc = mod_meta.get("description", "")
+                            combined = f"{mod_id} {mod_name} {mod_desc}".lower()
+
+                            # Check for known cheat mod IDs
+                            cheat_mod_ids = [
+                                "wurst", "meteor", "impact", "aristois", "inertia",
+                                "salhack", "forgehax", "lambda", "rusherhack",
+                                "hack", "cheat", "xray", "killaura", "autoclicker",
+                                "baritone", "freecam", "noclip",
+                            ]
+                            for cheat_id in cheat_mod_ids:
+                                if cheat_id in combined:
+                                    results.append(ScanResult(
+                                        scanner="MinecraftScanner",
+                                        category="fabric_cheat_mod",
+                                        name=f"Fabric Mod: {mod_name or mod_id}",
+                                        description=f"Cheat mod detected in Fabric metadata: {mod_name} (id: {mod_id})",
+                                        severity=95,
+                                        filepath=str(jar_path),
+                                        evidence=f"mod_id={mod_id}, name={mod_name}, desc={mod_desc[:200]}",
+                                        details={"launcher": launcher, "mod_id": mod_id},
+                                    ))
+                                    break
+                        except Exception:
+                            pass
+
+                    # Forge mod metadata (mods.toml)
+                    for name in zf.namelist():
+                        if name.endswith("mods.toml"):
+                            try:
+                                toml_content = zf.read(name).decode('utf-8', errors='replace')
+                                toml_lower = toml_content.lower()
+                                for kw in ["hack", "cheat", "xray", "killaura", "autoclicker",
+                                           "wurst", "meteor", "impact", "noclip"]:
+                                    if kw in toml_lower:
+                                        results.append(ScanResult(
+                                            scanner="MinecraftScanner",
+                                            category="forge_cheat_mod",
+                                            name=f"Forge Mod: {jar_path.name}",
+                                            description=f"Cheat keyword in Forge mod metadata: {kw}",
+                                            severity=95,
+                                            filepath=str(jar_path),
+                                            evidence=toml_content[:300],
+                                            details={"launcher": launcher},
+                                        ))
+                                        break
+                            except Exception:
+                                pass
+            except (zipfile.BadZipFile, PermissionError):
+                pass
+            except Exception as e:
+                logger.debug(f"Error scanning mod JAR {jar_path}: {e}")
+
+        return results
+
+    def scan_all(self) -> List[ScanResult]:
+        """Full scan of all Minecraft installations."""
+        all_results = []
+        installations = self.find_installations()
+
+        if not installations:
+            logger.info("No Minecraft installations found")
+            return all_results
+
+        total_dirs = sum(len(dirs) for dirs in installations.values())
+        self.progress.start("Minecraft Scanner", total_dirs * len(MINECRAFT_SCAN_DIRS) + 2)
+
+        for launcher, dirs in installations.items():
+            for base_dir in dirs:
+                results = self._scan_installation(base_dir, launcher)
+                all_results.extend(results)
+
+                # Scan Fabric/Forge mod lists
+                all_results.extend(self._scan_fabric_forge_modlist(base_dir, launcher))
+
+        # Scan JVM arguments of running Java processes
+        self.progress.update("Scanning JVM arguments...")
+        all_results.extend(self._scan_jvm_arguments())
+
+        logger.info(f"Minecraft scan complete: {len(all_results)} findings")
+        return all_results
 
     def get_installation_info(self) -> List[Dict]:
         """Get summary info about all installations found."""

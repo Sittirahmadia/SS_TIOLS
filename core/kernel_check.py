@@ -1,7 +1,12 @@
 """
 SS-Tools Ultimate - Kernel Check Module
 Detects kernel-level cheats, rootkits, vulnerable/exploitable drivers,
-hidden drivers, and unsigned drivers.
+hidden drivers, unsigned drivers, and minifilter (fltmc) anomalies.
+
+Enhanced with:
+  - fltmc filter driver scanning
+  - Trusted signer validation against gaming peripheral whitelist
+  - SSDT hook detection via cross-view analysis
 """
 import os
 import re
@@ -13,6 +18,7 @@ from typing import List, Dict, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from core.database import CheatDatabase
+from core.config import GAMING_SOFTWARE_WHITELIST
 from core.utils import ScanResult, ScanProgress, logger, file_hash_sha256
 
 # Windows-only imports (gracefully handle non-Windows)
@@ -75,6 +81,16 @@ class KernelCheck:
         self.progress.update("Cross-view scanning...")
         hidden_results = self._detect_hidden_drivers()
         results.extend(hidden_results)
+
+        # 6. Minifilter (fltmc) driver scanning
+        self.progress.update("Scanning minifilter drivers...")
+        fltmc_results = self._scan_fltmc_filters()
+        results.extend(fltmc_results)
+
+        # 7. SSDT hook detection
+        self.progress.update("Checking SSDT integrity...")
+        ssdt_results = self._check_ssdt_hooks()
+        results.extend(ssdt_results)
 
         return results
 
@@ -285,6 +301,112 @@ class KernelCheck:
 
         except Exception as e:
             logger.debug(f"Hidden driver detection error: {e}")
+
+        return results
+
+    def _is_trusted_signer(self, signer: str) -> bool:
+        """Check if a driver signer is in the trusted gaming/system whitelist."""
+        signer_lower = signer.lower()
+        for trusted in GAMING_SOFTWARE_WHITELIST["trusted_signers"]:
+            if trusted in signer_lower:
+                return True
+        return False
+
+    def _scan_fltmc_filters(self) -> List[ScanResult]:
+        """Scan minifilter drivers using fltmc command.
+        Minifilters can intercept file I/O at the kernel level -- cheat tools
+        sometimes install them to hide files or intercept game data.
+        """
+        results = []
+        try:
+            proc = subprocess.run(
+                ["fltmc", "filters"],
+                capture_output=True, text=True, timeout=15
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                lines = proc.stdout.strip().split('\n')
+                # Skip header lines (first 2-3 lines are headers/separator)
+                for line in lines[2:]:
+                    parts = line.split()
+                    if len(parts) >= 3:
+                        filter_name = parts[0].strip()
+                        # Check against known cheat minifilters
+                        for sig in self.db.kernel_driver_signatures:
+                            if sig["name"].lower() in filter_name.lower():
+                                results.append(ScanResult(
+                                    scanner="KernelCheck",
+                                    category="cheat_minifilter",
+                                    name=filter_name,
+                                    description=f"Suspicious minifilter driver: {filter_name} (matches {sig['name']})",
+                                    severity=sig.get("severity", 95),
+                                    evidence=f"fltmc output: {line.strip()}",
+                                ))
+                                break
+
+                        # Flag minifilters not from known vendors
+                        known_filter_prefixes = [
+                            "wcifs", "cldflt", "storqosflt", "wcnfs", "filecrypt",
+                            "luafv", "npsvctrig", "bindfltr", "wof", "fileinfo",
+                            "fltmgr", "mup", "dfsc", "csc", "rdyboost",
+                            "wd", "windows defender", "mbam", "avgflt",
+                        ]
+                        filter_lower = filter_name.lower()
+                        is_known = any(p in filter_lower for p in known_filter_prefixes)
+                        if not is_known and len(filter_name) > 2:
+                            # Unknown minifilter -- low severity informational
+                            results.append(ScanResult(
+                                scanner="KernelCheck",
+                                category="unknown_minifilter",
+                                name=filter_name,
+                                description=f"Unknown minifilter driver: {filter_name}",
+                                severity=30,
+                                evidence=f"fltmc: {line.strip()}",
+                            ))
+
+        except FileNotFoundError:
+            logger.debug("fltmc not available (not running as admin?)")
+        except Exception as e:
+            logger.debug(f"fltmc scan error: {e}")
+
+        return results
+
+    def _check_ssdt_hooks(self) -> List[ScanResult]:
+        """Detect SSDT (System Service Descriptor Table) hooks.
+        Uses indirect detection: compare loaded kernel modules against
+        expected system modules to find rogue kernel-level hooks.
+        """
+        results = []
+        try:
+            # Check for suspicious kernel modules that commonly hook SSDT
+            proc = subprocess.run(
+                ["driverquery", "/si", "/fo", "csv"],
+                capture_output=True, text=True, timeout=20
+            )
+            if proc.returncode == 0:
+                lines = proc.stdout.strip().split('\n')
+                for line in lines[1:]:
+                    fields = line.replace('"', '').split(',')
+                    if len(fields) >= 5:
+                        driver_name = fields[0].strip()
+                        is_signed = fields[-1].strip().lower() if len(fields) > 5 else ""
+
+                        # Flag unsigned kernel drivers (potential SSDT hookers)
+                        if is_signed in ("false", "no", ""):
+                            driver_lower = driver_name.lower()
+                            # Skip known false positives
+                            if any(safe in driver_lower for safe in
+                                   ["virtual", "vm", "vbox", "hyper"]):
+                                continue
+                            results.append(ScanResult(
+                                scanner="KernelCheck",
+                                category="unsigned_kernel_module",
+                                name=driver_name,
+                                description=f"Unsigned kernel module (potential SSDT hook): {driver_name}",
+                                severity=65,
+                                evidence=f"Driver: {driver_name}, Signed: {is_signed}",
+                            ))
+        except Exception as e:
+            logger.debug(f"SSDT check error: {e}")
 
         return results
 

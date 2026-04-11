@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-SS-Tools Ultimate v3.0 - Anti-Cheat Screenshare Tool
+Minecraft SS AntiCheat Scanner v1.0
 Main entry point for the application.
+
+Requires Windows 10/11 with administrator privileges.
+Auto-requests UAC elevation if not running as admin.
 
 Usage:
     python main.py          # Launch GUI
@@ -10,6 +13,7 @@ Usage:
 """
 import sys
 import os
+import platform
 import argparse
 import json
 import time
@@ -18,15 +22,33 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
+def check_platform_and_admin():
+    """Verify Windows platform and request admin elevation if needed."""
+    if platform.system() != "Windows":
+        print("[WARNING] This tool is designed for Windows 10/11.")
+        print("          Some scanners will be unavailable on this platform.")
+        return
+
+    from core.config import is_admin, request_admin_elevation
+    if not is_admin():
+        print("[*] Requesting administrator privileges...")
+        request_admin_elevation()
+        # If we get here, elevation was denied or failed
+        print("[WARNING] Running without admin privileges. Some scans will be limited.")
+
+
 def run_gui():
     """Launch the PyQt6 GUI application."""
+    check_platform_and_admin()
     from gui.main_window import main
     main()
 
 
 def run_cli(args):
     """Run CLI-mode scan (headless) using parallel ScanEngine."""
-    from core.config import AppSettings
+    check_platform_and_admin()
+
+    from core.config import AppSettings, is_admin
     from core.utils import format_duration, severity_label, logger
     from core.database import CheatDatabase
     from core.scan_engine import ScanEngine
@@ -37,9 +59,11 @@ def run_cli(args):
         settings.deep_scan_mode = True
     db = CheatDatabase()
 
+    admin_status = "YES" if is_admin() else "NO (limited)"
     print("=" * 60)
-    print("  SS-Tools Ultimate v3.0 - CLI Mode (Parallel Engine)")
+    print("  Minecraft SS AntiCheat Scanner v1.0 - CLI Mode")
     print(f"  Database: v{db.version}")
+    print(f"  Admin: {admin_status}")
     print("=" * 60)
 
     scan_types = [s.strip() for s in (args.scan or "full").split(",")]
@@ -124,7 +148,7 @@ def run_cli(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="SS-Tools Ultimate v3.0 - Anti-Cheat Screenshare Tool"
+        description="Minecraft SS AntiCheat Scanner v1.0 - Screenshare Anti-Cheat Tool"
     )
     parser.add_argument("--cli", action="store_true", help="Run in CLI mode (no GUI)")
     parser.add_argument("--scan", type=str, default="full",

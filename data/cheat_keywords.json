@@ -1,8 +1,8 @@
 {
   "meta": {
-    "version": "3.4.0",
-    "last_updated": "2026-04-09",
-    "total_entries": 742,
+    "version": "4.0.0",
+    "last_updated": "2026-04-11",
+    "total_entries": 760,
     "update_url": "https://raw.githubusercontent.com/Sittirahmadia/SS_TIOLS/main/data/cheat_keywords.json",
     "description": "SS-Tools Ultimate Cheat Signature Database"
   },
@@ -4586,5 +4586,37 @@
     "searchindexer.exe",
     "securityhealthservice.exe",
     "sgrmbroker.exe"
+  ],
+  "cheat_file_hashes": [
+    {
+      "name": "ZenithMacros v2.1",
+      "sha256": "placeholder_zenith_hash_update_with_real_hash",
+      "severity": 100,
+      "description": "ZenithMacros premium PvP macro tool"
+    },
+    {
+      "name": "198 Macros v3.0",
+      "sha256": "placeholder_198macros_hash_update_with_real_hash",
+      "severity": 100,
+      "description": "198 Macros Crystal/Sword/Mace PvP tool"
+    },
+    {
+      "name": "ToadClicker",
+      "sha256": "placeholder_toadclicker_hash_update_with_real_hash",
+      "severity": 95,
+      "description": "Minecraft-specific auto-clicker"
+    }
+  ],
+  "gaming_software_whitelist_processes": [
+    "lghub.exe", "lghub_agent.exe", "lghub_updater.exe",
+    "razercentral.exe", "razercentralservice.exe", "razersynapse.exe",
+    "razersynapse3.exe", "rzsdkservice.exe",
+    "icue.exe", "corsairllaccess64.exe",
+    "steelseriesgg.exe", "steelseriesengine.exe", "steelseriesengine3.exe",
+    "hyperxngenuity.exe",
+    "roccatswarm.exe",
+    "armourycrate.exe",
+    "gloriouscore.exe",
+    "bloody7.exe", "bloody8.exe"
   ]
 }

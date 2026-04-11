@@ -170,11 +170,19 @@ class MemoryScanner:
     def scan_strings_in_memory(self, pid: int,
                                 min_length: int = 6) -> List[ScanResult]:
         """Scan readable memory regions of a process for cheat strings.
-        Uses Windows API via PowerShell for memory reading.
+        Uses Windows API via ctypes for direct memory reading.
+        Falls back to PowerShell module enumeration.
         """
         results = []
+
+        # Try direct memory scanning via ctypes on Windows
+        if CTYPES_AVAILABLE and os.name == 'nt':
+            results.extend(self._scan_memory_regions_ctypes(pid, min_length))
+            if results:
+                return results
+
+        # Fallback: enumerate modules via PowerShell
         try:
-            # Use procdump or strings approach via PowerShell
             proc = subprocess.run(
                 ["powershell", "-Command",
                  f"$p = Get-Process -Id {pid} -ErrorAction SilentlyContinue; "
@@ -195,4 +203,143 @@ class MemoryScanner:
                 results.extend(text_results)
         except Exception as e:
             logger.debug(f"Memory strings scan error: {e}")
+        return results
+
+    def _scan_memory_regions_ctypes(self, pid: int, min_length: int = 6) -> List[ScanResult]:
+        """Scan process memory regions using Windows API (ctypes) for deleted/hidden strings."""
+        results = []
+        if not CTYPES_AVAILABLE:
+            return results
+
+        try:
+            # Windows constants
+            PROCESS_VM_READ = 0x0010
+            PROCESS_QUERY_INFORMATION = 0x0400
+            MEM_COMMIT = 0x1000
+            PAGE_READABLE = {0x02, 0x04, 0x06, 0x20, 0x40, 0x80}  # R, RW, RX, etc.
+
+            kernel32 = ctypes.windll.kernel32
+
+            # Open process
+            handle = kernel32.OpenProcess(
+                PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, False, pid
+            )
+            if not handle:
+                return results
+
+            try:
+                # Define MEMORY_BASIC_INFORMATION
+                class MEMORY_BASIC_INFORMATION(ctypes.Structure):
+                    _fields_ = [
+                        ("BaseAddress", ctypes.c_void_p),
+                        ("AllocationBase", ctypes.c_void_p),
+                        ("AllocationProtect", ctypes.c_ulong),
+                        ("RegionSize", ctypes.c_size_t),
+                        ("State", ctypes.c_ulong),
+                        ("Protect", ctypes.c_ulong),
+                        ("Type", ctypes.c_ulong),
+                    ]
+
+                mbi = MEMORY_BASIC_INFORMATION()
+                address = 0
+                cheat_strings_found = []
+                max_regions = 500  # Limit to prevent hanging
+                regions_scanned = 0
+
+                # Get cheat keywords for matching
+                cheat_keywords = [kw.lower() for kw in self.db.get_all_keywords() if len(kw) >= 4]
+
+                while regions_scanned < max_regions:
+                    result_size = kernel32.VirtualQueryEx(
+                        handle, ctypes.c_void_p(address),
+                        ctypes.byref(mbi), ctypes.sizeof(mbi)
+                    )
+                    if result_size == 0:
+                        break
+
+                    # Only scan committed, readable regions up to 4MB
+                    if (mbi.State == MEM_COMMIT and
+                        mbi.Protect in PAGE_READABLE and
+                        mbi.RegionSize <= 4 * 1024 * 1024):
+
+                        buf = ctypes.create_string_buffer(mbi.RegionSize)
+                        bytes_read = ctypes.c_size_t(0)
+                        if kernel32.ReadProcessMemory(
+                            handle, ctypes.c_void_p(mbi.BaseAddress),
+                            buf, mbi.RegionSize, ctypes.byref(bytes_read)
+                        ):
+                            data = buf.raw[:bytes_read.value]
+                            # Extract ASCII strings
+                            ascii_strings = re.findall(
+                                rb'[\x20-\x7e]{' + str(min_length).encode() + rb',}', data
+                            )
+                            for s in ascii_strings:
+                                try:
+                                    decoded = s.decode('ascii', errors='ignore').lower()
+                                    for kw in cheat_keywords:
+                                        if kw in decoded:
+                                            cheat_strings_found.append((kw, decoded[:200]))
+                                            break
+                                except Exception:
+                                    pass
+
+                    address = mbi.BaseAddress + mbi.RegionSize
+                    if address <= mbi.BaseAddress:
+                        break
+                    regions_scanned += 1
+
+                # Report findings
+                seen = set()
+                for kw, context in cheat_strings_found:
+                    if kw not in seen:
+                        seen.add(kw)
+                        results.append(ScanResult(
+                            scanner="MemoryScanner",
+                            category="memory_string_forensic",
+                            name=f"Memory string: {kw}",
+                            description=f"Cheat-related string found in process memory (possibly deleted/hidden): {kw}",
+                            severity=85,
+                            filepath=f"PID:{pid}",
+                            evidence=context[:300],
+                            details={"pid": pid, "keyword": kw},
+                        ))
+
+            finally:
+                kernel32.CloseHandle(handle)
+
+        except Exception as e:
+            logger.debug(f"Ctypes memory scan error for PID {pid}: {e}")
+
+        return results
+
+    def scan_all_game_processes(self) -> List[ScanResult]:
+        """Forensic memory scan of all game-related processes (Minecraft + mouse software)."""
+        results = []
+        if not PSUTIL_AVAILABLE:
+            return results
+
+        target_processes = set()
+        mouse_software = [
+            "lghub", "razersynapse", "razercentral", "bloody",
+            "icue", "steelseriesengine", "steelseriesgg",
+        ]
+
+        try:
+            for proc in psutil.process_iter(['pid', 'name']):
+                name = (proc.info.get('name') or '').lower()
+                pid = proc.info.get('pid', 0)
+                # Minecraft/Java processes
+                if name in ('java.exe', 'javaw.exe', 'minecraft.exe'):
+                    target_processes.add(pid)
+                # Mouse software processes (scan for deleted macro strings)
+                for ms in mouse_software:
+                    if ms in name:
+                        target_processes.add(pid)
+                        break
+        except Exception:
+            pass
+
+        for pid in target_processes:
+            results.extend(self.scan_strings_in_memory(pid))
+
         return results

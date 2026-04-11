@@ -1,15 +1,18 @@
 """
-SS-Tools Ultimate - Process Scanner
+SS-Tools Ultimate - Process & DLL Scanner
 Scans running processes, loaded DLLs, and child processes for cheat indicators.
+Enhanced with SHA-256 hash detection, memory string scanning, and gaming whitelist.
 """
 import os
 import re
+import hashlib
 from typing import List, Dict, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from core.database import CheatDatabase
 from core.keyword_detector import KeywordDetector
-from core.utils import ScanResult, ScanProgress, logger
+from core.config import GAMING_SOFTWARE_WHITELIST
+from core.utils import ScanResult, ScanProgress, logger, file_hash_sha256
 
 try:
     import psutil
@@ -23,6 +26,12 @@ try:
 except ImportError:
     PEFILE_AVAILABLE = False
 
+# Known cheat executable SHA-256 hashes (partial list, extended via database)
+KNOWN_CHEAT_HASHES = {
+    # These would be populated from the cheat_keywords.json database
+    # Format: "sha256_hash": ("cheat_name", severity)
+}
+
 
 class ProcessScanner:
     """Scans running processes for cheat indicators."""
@@ -32,8 +41,12 @@ class ProcessScanner:
         self.detector = KeywordDetector()
         self.progress = progress or ScanProgress()
 
+    def _is_gaming_whitelisted(self, proc_name: str) -> bool:
+        """Check if process is a whitelisted gaming peripheral software."""
+        return proc_name.lower() in GAMING_SOFTWARE_WHITELIST["processes"]
+
     def scan(self) -> List[ScanResult]:
-        """Scan all running processes."""
+        """Scan all running processes with multi-layer detection."""
         results = []
         if not PSUTIL_AVAILABLE:
             results.append(ScanResult(
@@ -53,9 +66,14 @@ class ProcessScanner:
         for proc_info in processes:
             try:
                 pid = proc_info.info.get('pid', 0)
+                name = proc_info.info.get('name', '')
                 # Skip self and parent (the tool itself)
                 if pid in (self_pid, self_ppid, 0, 1):
-                    self.progress.update(proc_info.info.get('name', ''))
+                    self.progress.update(name)
+                    continue
+                # Skip whitelisted gaming software
+                if self._is_gaming_whitelisted(name):
+                    self.progress.update(name)
                     continue
                 proc_results = self._scan_process(proc_info)
                 results.extend(proc_results)
@@ -67,6 +85,9 @@ class ProcessScanner:
 
         # Scan loaded DLLs for Java processes (Minecraft)
         results.extend(self._scan_java_dlls())
+
+        # SHA-256 hash scan of suspicious executables
+        results.extend(self._scan_exe_hashes())
 
         return results
 
@@ -207,6 +228,58 @@ class ProcessScanner:
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
         return sorted(processes, key=lambda x: x.get('memory_mb', 0), reverse=True)
+
+    def _scan_exe_hashes(self) -> List[ScanResult]:
+        """SHA-256 hash scan of running process executables against known cheat hashes."""
+        results = []
+        if not PSUTIL_AVAILABLE:
+            return results
+
+        # Build hash database from CheatDatabase
+        hash_db = {}
+        for entry in self.db.data.get("cheat_file_hashes", []):
+            h = entry.get("sha256", "").lower()
+            if h:
+                hash_db[h] = (entry.get("name", "Unknown"), entry.get("severity", 100))
+        # Merge static known hashes
+        hash_db.update(KNOWN_CHEAT_HASHES)
+
+        if not hash_db:
+            return results
+
+        scanned_exes = set()
+        try:
+            for proc in psutil.process_iter(['pid', 'name', 'exe']):
+                exe = proc.info.get('exe') or ''
+                if not exe or exe in scanned_exes:
+                    continue
+                scanned_exes.add(exe)
+                if not os.path.isfile(exe):
+                    continue
+                # Skip large files (>100MB) and system files
+                try:
+                    if os.path.getsize(exe) > 100 * 1024 * 1024:
+                        continue
+                except OSError:
+                    continue
+
+                exe_hash = file_hash_sha256(exe)
+                if exe_hash and exe_hash.lower() in hash_db:
+                    cheat_name, severity = hash_db[exe_hash.lower()]
+                    results.append(ScanResult(
+                        scanner="ProcessScanner",
+                        category="cheat_hash_match",
+                        name=cheat_name,
+                        description=f"Known cheat executable hash match: {cheat_name}",
+                        severity=severity,
+                        filepath=exe,
+                        evidence=f"SHA-256: {exe_hash}, PID: {proc.info['pid']}",
+                        details={"pid": proc.info['pid'], "sha256": exe_hash},
+                    ))
+        except Exception as e:
+            logger.debug(f"Hash scan error: {e}")
+
+        return results
 
     def get_java_processes(self) -> List[Dict]:
         """Get only Java/Minecraft processes."""
